@@ -43,6 +43,8 @@ public @interface Transactional {
    * 
    * <p>
    * These exceptions are propagated correctly after a rollback.
+   * 
+   * @return A list of classed that the Roolback must be executed. By default {@link Exception}.
    */
   Class<? extends Exception>[] rollbackOn() default Exception.class;
 

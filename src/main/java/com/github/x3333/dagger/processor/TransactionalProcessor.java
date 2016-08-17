@@ -22,7 +22,7 @@ import com.google.auto.common.BasicAnnotationProcessor;
 import com.google.auto.service.AutoService;
 
 @AutoService(Processor.class)
-public class MethodInterceptorProcessor extends BasicAnnotationProcessor {
+public class TransactionalProcessor extends BasicAnnotationProcessor {
 
   @Override
   public SourceVersion getSupportedSourceVersion() {
@@ -31,7 +31,7 @@ public class MethodInterceptorProcessor extends BasicAnnotationProcessor {
 
   @Override
   protected Iterable<? extends ProcessingStep> initSteps() {
-    return Collections.singleton(new MethodInterceptorProcessingStep(processingEnv));
+    return Collections.singleton(new TransactionalProcessingStep(processingEnv));
   }
 
 }

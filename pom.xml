@@ -61,6 +61,11 @@
             <version>1.0.0.Final</version>
             <scope>provided</scope>
         </dependency>
+        <dependency>
+            <groupId>com.squareup</groupId>
+            <artifactId>javapoet</artifactId>
+            <version>1.7.0</version>
+        </dependency>
 
         <!-- Testing -->
         <dependency>

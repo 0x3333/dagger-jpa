@@ -17,6 +17,7 @@ import com.github.x3333.dagger.jpa.impl.JpaServiceImpl;
 
 import java.util.Map;
 
+import javax.inject.Singleton;
 import javax.persistence.EntityManager;
 
 import dagger.Module;
@@ -42,13 +43,15 @@ public class JpaModule {
 
   //
 
+  @Provides
+  @Singleton
   JpaService providesJpaService() {
     return new JpaServiceImpl(persistenceUnitName, persistenceProperties);
   }
 
   @Provides
   EntityManager providesEntityManager(final JpaService service) {
-    return null;
+    return service.get();
   }
 
 }
