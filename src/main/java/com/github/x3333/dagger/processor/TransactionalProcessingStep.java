@@ -141,28 +141,34 @@ final class TransactionalProcessingStep implements BasicAnnotationProcessor.Proc
                   + "  interceptor.invoke(new $T() {\n" //
                   + "    @Override\n" //
                   + "    public Object proceed() {\n" //
-                  + "      $L.super.$L();\n" //
+                  + "      $L.super.$L($L);\n" //
                   + "      return null;\n" //
                   + "    }\n" //
                   + "  });\n" //
                   + "} catch (Throwable e) {\n" //
                   + "  throw new RuntimeException(e);\n" //
                   + "}\n", //
-              MethodInvocation.class, name, methodElement.getSimpleName().toString());
+              MethodInvocation.class, name, methodElement.getSimpleName().toString(),
+              Joiner.on(", ")//
+                  .join(Lists.transform(methodElement.getParameters(), //
+                      variable -> variable.getSimpleName().toString())));
         } else {
           newMethod.addCode(
               "try {\n" //
                   + "  return ($T) interceptor.invoke(new $T() {\n" //
                   + "    @Override\n" //
                   + "    public Object proceed() {\n" //
-                  + "      return $L.super.$L();\n" //
+                  + "      return $L.super.$L($L);\n" //
                   + "    }\n" //
                   + "  });\n" //
                   + "} catch (Throwable e) {\n" //
                   + "  throw new RuntimeException(e);\n" //
                   + "}\n", //
               TypeName.get(methodElement.getReturnType()), MethodInvocation.class, name,
-              methodElement.getSimpleName().toString());
+              methodElement.getSimpleName().toString(),
+              Joiner.on(", ")//
+                  .join(Lists.transform(methodElement.getParameters(), //
+                      variable -> variable.getSimpleName().toString())));
         }
         classBuilder.addMethod(newMethod.build());
       }

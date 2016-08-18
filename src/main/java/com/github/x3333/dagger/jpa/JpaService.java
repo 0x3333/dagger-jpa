@@ -47,9 +47,20 @@ public interface JpaService extends Provider<EntityManager> {
   @Override
   EntityManager get();
 
+  /**
+   * Begin EntityManager work.
+   */
   void begin();
 
+  /**
+   * End EntityManager work.
+   */
   void end();
 
+  /**
+   * Check if EntityManager has already begun.
+   * 
+   * @return boolean true if already begun, false otherwise.
+   */
   boolean hasBegun();
 }
