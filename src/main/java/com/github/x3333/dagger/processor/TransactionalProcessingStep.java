@@ -82,8 +82,12 @@ final class TransactionalProcessingStep implements BasicAnnotationProcessor.Proc
         continue;
       }
       final TypeElement typeElement = MoreElements.asType(element.getEnclosingElement());
+      if (typeElement.getModifiers().contains(Modifier.PUBLIC)) {
+        printError(element, "@Transactional method's class must not be Public!");
+        continue;
+      }
       if (typeElement.getModifiers().contains(Modifier.FINAL)) {
-        printError(element, "@Transactional method's class cannot be Final!");
+        printError(element, "@Transactional class cannot be Final!");
         continue;
       }
       if (!typeElement.getModifiers().contains(Modifier.ABSTRACT)) {
@@ -112,24 +116,20 @@ final class TransactionalProcessingStep implements BasicAnnotationProcessor.Proc
           .superclass(ClassName.get(typeElement))//
           .addAnnotations(Lists.transform(typeElement.getAnnotationMirrors(), AnnotationSpec::get));
 
-      // Constructors
+      // Constructor
       int constructorsCount = 0;
-      int injectableConstructorsCount = 0;
       for (final Element element : typeElement.getEnclosedElements()) {
         if (element.getKind() == ElementKind.CONSTRUCTOR) {
-          final MethodSpec.Builder copyConstructor = copyConstructor(MoreElements.asExecutable(element));
           constructorsCount++;
-          if (element.getAnnotationsByType(Inject.class).length > 0) {
-            injectableConstructorsCount++;
-          }
-          copyConstructor.addParameter(ClassName.get(TransactionalInterceptor.class), "interceptor", Modifier.FINAL)//
+          final MethodSpec.Builder copyConstructor = copyConstructor(MoreElements.asExecutable(element)) //
+              .addAnnotation(Inject.class)//
+              .addParameter(ClassName.get(TransactionalInterceptor.class), "interceptor", Modifier.FINAL)//
               .addStatement("this.interceptor = interceptor");
           classBuilder.addMethod(copyConstructor.build());
         }
       }
-      if (constructorsCount > 0 && (injectableConstructorsCount == 0 || injectableConstructorsCount > 1)) {
-        printError(typeElement,
-            "@Transactional classes must have one constructor annotated with @Inject or no constructor");
+      if (constructorsCount > 1) {
+        printError(typeElement, "@Transactional classes must have only one constructor!");
       }
 
       // Methods

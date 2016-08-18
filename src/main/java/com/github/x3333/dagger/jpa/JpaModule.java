@@ -54,4 +54,9 @@ public class JpaModule {
     return service.get();
   }
 
+  @Provides
+  TransactionalInterceptor providesTransactionalInterceptor(final JpaService service) {
+    return new TransactionalInterceptor(service);
+  }
+
 }

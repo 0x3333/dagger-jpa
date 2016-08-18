@@ -19,7 +19,6 @@ import com.github.x3333.dagger.MethodInvocation;
 import javax.inject.Inject;
 import javax.persistence.EntityManager;
 import javax.persistence.EntityTransaction;
-import javax.transaction.InvalidTransactionException;
 
 public class TransactionalInterceptor implements MethodInterceptor {
 
@@ -47,11 +46,6 @@ public class TransactionalInterceptor implements MethodInterceptor {
 
     // If there is an active transaction, join.
     if (transaction.isActive()) {
-      if (Boolean.TRUE.equals(shouldClose.get())) {
-        // Should never occur
-        throw new InvalidTransactionException("There is an Active transaction in a new EntityManager!");
-      }
-
       return invocation.proceed();
     }
 
