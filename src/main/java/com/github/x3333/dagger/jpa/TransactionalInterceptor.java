@@ -21,7 +21,7 @@ import javax.persistence.EntityManager;
 import javax.persistence.EntityTransaction;
 import javax.transaction.InvalidTransactionException;
 
-class TransactionalInterceptor implements MethodInterceptor {
+public class TransactionalInterceptor implements MethodInterceptor {
 
   private final JpaService service;
   private final ThreadLocal<Boolean> shouldClose = new ThreadLocal<Boolean>();

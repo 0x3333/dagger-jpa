@@ -13,8 +13,6 @@
 
 package com.github.x3333.dagger;
 
-import java.lang.annotation.Annotation;
-
 /**
  * Represents a Method Invocation.
  * 
@@ -24,8 +22,6 @@ import java.lang.annotation.Annotation;
  * @author Tercio Gaudencio Filho (terciofilho [at] gmail.com)
  */
 public interface MethodInvocation {
-
-  <T extends Annotation> T annotation();
 
   Object proceed();
 
