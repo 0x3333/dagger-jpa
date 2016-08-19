@@ -20,13 +20,13 @@ More info later as I finish things up.
 Example
 -------
 
-```
+```java
 YourComponent component = DaggerYourComponent.builder().yourModule(new YourModule()).jpaModule(new JpaModule("jpa-unit-name")).build();
 
 component.jpaService().start();
 ```
 
-```
+```java
 // You MUST add JpaModule to your module list
 @Component(modules = { JpaModule.class, YourModule.class })
 @Singleton
@@ -39,7 +39,7 @@ public interface YourComponent {
 }
 ```
 
-```
+```java
 @Module
 public class YourModule {
 
@@ -50,10 +50,9 @@ public class YourModule {
   }
 
 }
-
 ```
 
-```
+```java
 package com.github.x3333.dagger.jpa.tester;
 
 import javax.persistence.EntityManager;
