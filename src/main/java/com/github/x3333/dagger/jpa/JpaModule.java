@@ -23,6 +23,8 @@ import javax.persistence.EntityManager;
 import dagger.Module;
 import dagger.Provides;
 
+// TODO: Move this class to a generated one by the Processor
+// So we don't need to distribute the dagger generated factories, which can cause problems in applications with different versions of dagger
 @Module
 public class JpaModule {
 
