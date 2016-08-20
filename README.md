@@ -1,5 +1,7 @@
 # Dagger2 JPA
 
+### ***This is a work in progress. API is not defined yet.*** ###
+
 Usage
 -----
 
