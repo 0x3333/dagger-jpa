@@ -62,27 +62,28 @@ public class YourModule {
 package com.github.x3333.dagger.jpa.tester;
 
 import javax.inject.Inject;
+import javax.inject.Provider;
+
 import javax.persistence.EntityManager;
 
 import com.github.x3333.dagger.jpa.annotations.Transactional;
 
-import dagger.Lazy;
 
 public abstract class DbWork {
 
-  // Must be Lazy! Otherwise Dagger will try to inject it before initialization
-  private Lazy<EntityManager> em;
+  // Should not be injected directly(Or Provider ou Lazy), as Dagger will try to inject before EntityManagerFactory has been created
+  private Provider<EntityManager> emProvider;
 
   @Inject
-  public Transac(SomeDep someDep, Lazy<EntityManager> em) {
+  public Transac(SomeDep someDep, Provider<EntityManager> emProvider) {
     this.someDep = someDep;
-    this.em = em;
+    this.emProvider = emProvider;
   }
 
   @Transactional
   protected void someWork() {
-    // Do some DB work with 'em'
-    em.get().isOpen();
+    // Do some DB work with 'em', 'em' will be binded to the local thread.
+    emProvider.get().isOpen();
   }
 
   @Transactional
