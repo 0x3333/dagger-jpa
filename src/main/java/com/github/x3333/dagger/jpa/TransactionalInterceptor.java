@@ -15,12 +15,18 @@ package com.github.x3333.dagger.jpa;
 
 import com.github.x3333.dagger.MethodInterceptor;
 import com.github.x3333.dagger.MethodInvocation;
+import com.github.x3333.dagger.jpa.annotations.Transactional;
 
 import javax.inject.Inject;
 import javax.persistence.EntityManager;
 import javax.persistence.EntityTransaction;
 
-public class TransactionalInterceptor implements MethodInterceptor {
+/**
+ * Intercepts all methods in a class to made it transactional.
+ * 
+ * @author Tercio Gaudencio Filho (tercio [at] imapia.com.br)
+ */
+public class TransactionalInterceptor implements MethodInterceptor<Transactional> {
 
   private final JpaService service;
   private final ThreadLocal<Boolean> shouldClose = new ThreadLocal<Boolean>();
@@ -35,7 +41,7 @@ public class TransactionalInterceptor implements MethodInterceptor {
   //
 
   @Override
-  public Object invoke(final MethodInvocation invocation) throws Throwable {
+  public Object invoke(final MethodInvocation<Transactional> invocation) throws Throwable {
     if (!service.hasBegun()) {
       service.begin();
       shouldClose.set(true);
@@ -55,10 +61,15 @@ public class TransactionalInterceptor implements MethodInterceptor {
     try {
       result = invocation.proceed();
     } catch (final Exception e) {
-      transaction.rollback(); // Rollback if an Exception has been catch
+      final boolean rollback = doRollback(transaction, e, invocation.annotation().rollbackOn());
+      if (rollback) {
+        transaction.rollback();
+      } else {
+        transaction.commit();
+      }
       throw e; // Continue exception flow
     } finally {
-      // Close the EM in case catch has fired(!transaction.isActive())
+      // Close the EM in case we started work and transaction is not active anymore.
       if (Boolean.TRUE.equals(shouldClose.get()) && !transaction.isActive()) {
         shouldClose.remove();
         service.end();
@@ -76,6 +87,18 @@ public class TransactionalInterceptor implements MethodInterceptor {
     }
 
     return result;
+  }
+
+  private boolean doRollback(//
+      final EntityTransaction transaction, //
+      final Exception e, //
+      final Class<? extends Exception>[] rollbackOn) {
+    for (final Class<? extends Exception> rollbackException : rollbackOn) {
+      if (rollbackException.isInstance(e)) {
+        return true;
+      }
+    }
+    return false;
   }
 
 }

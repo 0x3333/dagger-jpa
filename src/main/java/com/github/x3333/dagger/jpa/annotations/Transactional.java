@@ -25,7 +25,11 @@ import java.lang.annotation.Target;
  * start a new transaction before the method executes and commit it after the method returns.
  * 
  * <p>
- * If the method throws an exception the transaction will be rolled back.
+ * If the method throws an exception and this exception is in the {@link #rollbackOn()} list or is a subtype of, the transaction will be
+ * rolled back.
+ * 
+ * <p>
+ * By default, all {@link Exception} will trigger a rollback.
  * 
  * @author Tercio Gaudencio Filho (terciofilho [at] gmail.com)
  */
@@ -33,5 +37,15 @@ import java.lang.annotation.Target;
 @Retention(CLASS)
 @Target(METHOD)
 public @interface Transactional {
+
+  /**
+   * A list of exceptions to rollback on, if thrown by the transactional method.
+   * 
+   * <p>
+   * These exceptions are propagated correctly after a rollback.
+   * 
+   * @return A list of classed that the Roolback must be executed. By default {@link Exception}.
+   */
+  Class<? extends Exception>[] rollbackOn() default Exception.class;
 
 }

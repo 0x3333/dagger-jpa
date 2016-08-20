@@ -21,6 +21,9 @@ import javax.lang.model.SourceVersion;
 import com.google.auto.common.BasicAnnotationProcessor;
 import com.google.auto.service.AutoService;
 
+/**
+ * @author Tercio Gaudencio Filho (terciofilho [at] gmail.com)
+ */
 @AutoService(Processor.class)
 public class TransactionalProcessor extends BasicAnnotationProcessor {
 

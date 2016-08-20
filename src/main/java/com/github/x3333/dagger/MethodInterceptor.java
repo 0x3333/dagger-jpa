@@ -18,8 +18,8 @@ package com.github.x3333.dagger;
  * 
  * @author Tercio Gaudencio Filho (terciofilho [at] gmail.com)
  */
-public interface MethodInterceptor {
+public interface MethodInterceptor<A> {
 
-  Object invoke(MethodInvocation invocation) throws Throwable;
+  Object invoke(MethodInvocation<A> invocation) throws Throwable;
 
 }

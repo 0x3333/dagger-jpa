@@ -21,7 +21,9 @@ package com.github.x3333.dagger;
  * 
  * @author Tercio Gaudencio Filho (terciofilho [at] gmail.com)
  */
-public interface MethodInvocation {
+public interface MethodInvocation<A> {
+
+  A annotation();
 
   Object proceed();
 

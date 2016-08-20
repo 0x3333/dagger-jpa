@@ -19,7 +19,7 @@ import javax.persistence.EntityManager;
 /**
  * @author Tercio Gaudencio Filho (terciofilho [at] gmail.com)
  */
-public interface JpaService extends Provider<EntityManager> {
+public interface JpaService extends Provider<EntityManager>, JpaWork {
 
   /**
    * Starts the underlying persistence engine and makes JpaService ready for use. For instance, it creates an EntityManagerFactory and may
@@ -47,20 +47,4 @@ public interface JpaService extends Provider<EntityManager> {
   @Override
   EntityManager get();
 
-  /**
-   * Begin EntityManager work.
-   */
-  void begin();
-
-  /**
-   * End EntityManager work.
-   */
-  void end();
-
-  /**
-   * Check if EntityManager has already begun.
-   * 
-   * @return boolean true if already begun, false otherwise.
-   */
-  boolean hasBegun();
 }
