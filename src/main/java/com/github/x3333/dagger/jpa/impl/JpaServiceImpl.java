@@ -24,12 +24,17 @@ import javax.persistence.EntityManager;
 import javax.persistence.EntityManagerFactory;
 import javax.persistence.Persistence;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 /**
  * Default implementation of {@link JpaService}.
  * 
  * @author Tercio Gaudencio Filho (terciofilho [at] gmail.com)
  */
 public class JpaServiceImpl implements JpaService {
+
+  private final Logger logger = LoggerFactory.getLogger(JpaServiceImpl.class);
 
   protected boolean started = false;
 
@@ -47,6 +52,7 @@ public class JpaServiceImpl implements JpaService {
 
   @Override
   public void start() {
+    logger.debug("Starting");
     if (started) {
       return;
     }
@@ -67,6 +73,7 @@ public class JpaServiceImpl implements JpaService {
 
   @Override
   public void stop() {
+    logger.debug("Stopping");
     if (!started) {
       return;
     }
@@ -82,6 +89,7 @@ public class JpaServiceImpl implements JpaService {
 
   @Override
   public EntityManager get() {
+    logger.debug("Get EntityManager");
     if (!hasBegun()) {
       begin();
     }
@@ -91,6 +99,7 @@ public class JpaServiceImpl implements JpaService {
 
   @Override
   public void begin() {
+    logger.debug("Begin work");
     if (entityManager.get() != null) {
       return;
     }
@@ -100,6 +109,7 @@ public class JpaServiceImpl implements JpaService {
 
   @Override
   public void end() {
+    logger.debug("End work");
     final EntityManager em = entityManager.get();
     if (em == null) {
       return;
