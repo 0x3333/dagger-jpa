@@ -30,23 +30,30 @@
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
 
-        <checkstyle.dir>${basedir}</checkstyle.dir>
+        <checkstyle.config>${basedir}/checkstyle.xml</checkstyle.config>
 
         <dagger.version>2.6</dagger.version>
     </properties>
 
     <dependencies>
-        <!-- Library -->
         <dependency>
             <groupId>com.google.dagger</groupId>
             <artifactId>dagger</artifactId>
             <version>${dagger.version}</version>
         </dependency>
+
+        <dependency>
+            <groupId>com.squareup</groupId>
+            <artifactId>javapoet</artifactId>
+            <version>1.7.0</version>
+        </dependency>
+
         <dependency>
             <groupId>com.google.guava</groupId>
             <artifactId>guava</artifactId>
             <version>19.0</version>
         </dependency>
+
         <dependency>
             <groupId>com.google.auto</groupId>
             <artifactId>auto-common</artifactId>
@@ -57,21 +64,19 @@
             <artifactId>auto-service</artifactId>
             <version>1.0-rc2</version>
         </dependency>
+
         <dependency>
             <groupId>org.hibernate.javax.persistence</groupId>
             <artifactId>hibernate-jpa-2.0-api</artifactId>
             <version>1.0.0.Final</version>
             <scope>provided</scope>
         </dependency>
-        <dependency>
-            <groupId>com.squareup</groupId>
-            <artifactId>javapoet</artifactId>
-            <version>1.7.0</version>
-        </dependency>
+
         <dependency>
             <groupId>org.slf4j</groupId>
             <artifactId>slf4j-api</artifactId>
             <version>1.7.21</version>
+            <scope>provided</scope>
         </dependency>
 
         <!-- Testing -->
@@ -85,14 +90,17 @@
 
     <build>
         <plugins>
+            <!-- JDT Compiler -->
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-compiler-plugin</artifactId>
                 <version>3.5.1</version>
                 <configuration>
-                    <compilerId>jdt</compilerId>
                     <source>1.8</source>
                     <target>1.8</target>
+                    <compilerId>jdt</compilerId>
+                    <!-- Disable annotation processors during normal compilation -->
+                    <compilerArgument>-proc:none</compilerArgument>
                 </configuration>
                 <dependencies>
                     <dependency>
@@ -100,6 +108,37 @@
                         <artifactId>tycho-compiler-jdt</artifactId>
                         <version>0.25.0</version>
                     </dependency>
+                </dependencies>
+            </plugin>
+            
+            <!-- Run annotation processors on src/main/java sources -->
+            <plugin>
+                <groupId>org.bsc.maven</groupId>
+                <artifactId>maven-processor-plugin</artifactId>
+                <version>3.1.0</version>
+                <configuration>
+                    <processors>
+                        <processor>com.google.auto.service.processor.AutoServiceProcessor</processor>
+                        <processor>dagger.internal.codegen.ComponentProcessor</processor>
+                    </processors>
+                </configuration>
+                <executions>
+                    <execution>
+                        <id>process</id>
+                        <goals>
+                            <goal>process</goal>
+                        </goals>
+                        <phase>generate-sources</phase>
+                    </execution>
+                    <execution>
+                        <id>process-test</id>
+                        <goals>
+                            <goal>process-test</goal>
+                        </goals>
+                        <phase>generate-test-sources</phase>
+                    </execution>
+                </executions>
+                <dependencies>
                     <dependency>
                         <groupId>com.google.dagger</groupId>
                         <artifactId>dagger-compiler</artifactId>
@@ -107,6 +146,8 @@
                     </dependency>
                 </dependencies>
             </plugin>
+            
+            <!-- Checkstyle -->
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-checkstyle-plugin</artifactId>
@@ -114,21 +155,23 @@
                 <executions>
                     <execution>
                         <id>validate</id>
+                        <goals>
+                            <goal>check</goal>
+                        </goals>
                         <phase>validate</phase>
                         <configuration>
                             <consoleOutput>true</consoleOutput>
                             <failsOnError>true</failsOnError>
                             <linkXRef>false</linkXRef>
-                            <configLocation>${checkstyle.dir}/checkstyle.xml</configLocation>
-                            <!-- Ignore files generated by APT -->
+                            <configLocation>${checkstyle.config}</configLocation>
+                            <!-- Only process files in the source directory, ignoring files generated by APT -->
                             <sourceDirectory>${project.build.sourceDirectory}</sourceDirectory>
                         </configuration>
-                        <goals>
-                            <goal>check</goal>
-                        </goals>
                     </execution>
                 </executions>
             </plugin>
+
+            <!-- Add sources to JAR -->
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-source-plugin</artifactId>
@@ -142,6 +185,8 @@
                     </execution>
                 </executions>
             </plugin>
+
+            <!-- Add Javadoc to JAR -->
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-javadoc-plugin</artifactId>
