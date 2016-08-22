@@ -13,6 +13,8 @@
 
 package com.github.x3333.dagger.jpa;
 
+import com.github.x3333.dagger.MethodInterceptor;
+import com.github.x3333.dagger.jpa.annotations.Transactional;
 import com.github.x3333.dagger.jpa.impl.JpaServiceImpl;
 
 import java.util.Map;
@@ -57,7 +59,7 @@ public class JpaModule {
   }
 
   @Provides
-  TransactionalInterceptor providesTransactionalInterceptor(final JpaService service) {
+  MethodInterceptor<Transactional> providesTransactionalInterceptor(final JpaService service) {
     return new TransactionalInterceptor(service);
   }
 

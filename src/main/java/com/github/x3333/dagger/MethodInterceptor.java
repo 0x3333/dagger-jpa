@@ -13,12 +13,14 @@
 
 package com.github.x3333.dagger;
 
+import java.lang.annotation.Annotation;
+
 /**
  * Basic interface for a Method Interceptor.
  * 
  * @author Tercio Gaudencio Filho (terciofilho [at] gmail.com)
  */
-public interface MethodInterceptor<A> {
+public interface MethodInterceptor<A extends Annotation> {
 
   Object invoke(MethodInvocation<A> invocation) throws Throwable;
 

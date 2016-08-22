@@ -15,8 +15,8 @@ package com.github.x3333.dagger.processor;
 
 import static com.google.common.base.Preconditions.checkArgument;
 
+import com.github.x3333.dagger.MethodInterceptor;
 import com.github.x3333.dagger.MethodInvocation;
-import com.github.x3333.dagger.jpa.TransactionalInterceptor;
 import com.github.x3333.dagger.jpa.annotations.Transactional;
 
 import java.io.IOException;
@@ -61,6 +61,9 @@ import com.squareup.javapoet.TypeSpec;
  * @author Tercio Gaudencio Filho (tercio [at] imapia.com.br)
  */
 // FIXME: Cleanup code, it's a mess.
+// FIXME: Generalize this class, so we can create multiple method interceptors binded by some annotation.
+// We could find Annotations that are annotated by @MethodInterceptor or something and the Dagger module binds the
+// MethodInterceptor<Annotation> to some instance of this interceptor, the way TransactionalInterceptor is binded.
 final class TransactionalProcessingStep implements BasicAnnotationProcessor.ProcessingStep {
 
   private final ProcessingEnvironment processingEnv;
@@ -118,13 +121,15 @@ final class TransactionalProcessingStep implements BasicAnnotationProcessor.Proc
     for (final TypeElement typeElement : binds.keySet()) {
       // New Class
       final ClassName elementName = ClassName.get(typeElement);
+      final ParameterizedTypeName interceptorType =
+          ParameterizedTypeName.get(MethodInterceptor.class, Transactional.class);
       final String name = "Transactional_" + Joiner.on("_").join(elementName.simpleNames());
       final TypeSpec.Builder classBuilder = TypeSpec.classBuilder(name) //
           .addOriginatingElement(typeElement) //
           .addAnnotation(AnnotationSpec.builder(Generated.class) //
               .addMember("value", "$S", TransactionalProcessor.class.getCanonicalName()).build()) //
           .addModifiers(Modifier.PUBLIC, Modifier.FINAL) //
-          .addField(ClassName.get(TransactionalInterceptor.class), "interceptor", Modifier.PRIVATE, Modifier.FINAL) //
+          .addField(interceptorType, "interceptor", Modifier.PRIVATE, Modifier.FINAL) //
           .superclass(ClassName.get(typeElement)) //
           .addAnnotations(Lists.transform(typeElement.getAnnotationMirrors(), AnnotationSpec::get));
 
@@ -143,7 +148,8 @@ final class TransactionalProcessingStep implements BasicAnnotationProcessor.Proc
           MethodSpec.constructorBuilder().addModifiers(Modifier.PUBLIC) : //
           copyConstructor(constructorElement) //
               .addAnnotation(Inject.class) //
-              .addParameter(ClassName.get(TransactionalInterceptor.class), "interceptor", Modifier.FINAL) //
+              .addParameter(interceptorType, //
+                  "interceptor", Modifier.FINAL) //
               .addStatement("this.interceptor = interceptor");
 
       // Start Annotation Cache statements.
