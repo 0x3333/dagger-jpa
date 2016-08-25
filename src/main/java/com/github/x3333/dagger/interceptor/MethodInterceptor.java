@@ -11,22 +11,15 @@
  * and limitations under the License.
  */
 
-package com.github.x3333.dagger;
-
-import java.lang.annotation.Annotation;
+package com.github.x3333.dagger.interceptor;
 
 /**
- * Represents a Method Invocation.
- * 
- * <p>
- * A instance of this interface is provided to the Method Interceptor to proceed the invocation when necessary.
+ * Basic interface for a Method Interceptor.
  * 
  * @author Tercio Gaudencio Filho (terciofilho [at] gmail.com)
  */
-public interface MethodInvocation<A extends Annotation> {
+public interface MethodInterceptor {
 
-  A annotation();
-
-  Object proceed();
+  Object invoke(MethodInvocation invocation) throws Throwable;
 
 }

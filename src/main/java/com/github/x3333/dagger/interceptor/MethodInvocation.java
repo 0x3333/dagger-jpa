@@ -11,17 +11,34 @@
  * and limitations under the License.
  */
 
-package com.github.x3333.dagger;
+package com.github.x3333.dagger.interceptor;
 
 import java.lang.annotation.Annotation;
 
+import com.google.common.collect.Iterables;
+
 /**
- * Basic interface for a Method Interceptor.
+ * Represents a Method Invocation.
+ * 
+ * <p>
+ * A instance of this interface is provided to the Method Interceptor to proceed the invocation when necessary.
  * 
  * @author Tercio Gaudencio Filho (terciofilho [at] gmail.com)
  */
-public interface MethodInterceptor<A extends Annotation> {
+public interface MethodInvocation {
 
-  Object invoke(MethodInvocation<A> invocation) throws Throwable;
+  Iterable<Annotation> annotations();
+
+  Object proceed();
+
+  /**
+   * Return the Annotation instance of the Method based on it's Class.
+   * 
+   * @return Annotation instance if present, or null otherwise.
+   */
+  @SuppressWarnings("unchecked")
+  default <T extends Annotation> T annotation(final Class<T> annotationClass) {
+    return (T) Iterables.find(annotations(), a -> a.getClass().equals(annotationClass), null);
+  }
 
 }

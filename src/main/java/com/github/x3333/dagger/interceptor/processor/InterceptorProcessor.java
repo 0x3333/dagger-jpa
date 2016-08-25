@@ -11,7 +11,7 @@
  * and limitations under the License.
  */
 
-package com.github.x3333.dagger.processor;
+package com.github.x3333.dagger.interceptor.processor;
 
 import java.util.Collections;
 
@@ -25,7 +25,7 @@ import com.google.auto.service.AutoService;
  * @author Tercio Gaudencio Filho (terciofilho [at] gmail.com)
  */
 @AutoService(Processor.class)
-public class TransactionalProcessor extends BasicAnnotationProcessor {
+public class InterceptorProcessor extends BasicAnnotationProcessor {
 
   @Override
   public SourceVersion getSupportedSourceVersion() {
@@ -34,7 +34,7 @@ public class TransactionalProcessor extends BasicAnnotationProcessor {
 
   @Override
   protected Iterable<? extends ProcessingStep> initSteps() {
-    return Collections.singleton(new TransactionalProcessingStep(processingEnv));
+    return Collections.singleton(new InterceptorProcessorStep(processingEnv));
   }
 
 }

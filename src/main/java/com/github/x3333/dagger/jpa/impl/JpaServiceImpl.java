@@ -94,6 +94,7 @@ public class JpaServiceImpl implements JpaService {
       begin();
     }
 
+    // FIXME: Return a Wrapper to the EntityManager, so when the user closes it we call #end() here.
     return entityManager.get();
   }
 

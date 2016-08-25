@@ -13,10 +13,8 @@
 
 package com.github.x3333.dagger.processor;
 
-import static com.google.common.base.Preconditions.checkArgument;
-
-import com.github.x3333.dagger.MethodInterceptor;
-import com.github.x3333.dagger.MethodInvocation;
+import com.github.x3333.dagger.interceptor.MethodInterceptor;
+import com.github.x3333.dagger.interceptor.MethodInvocation;
 import com.github.x3333.dagger.jpa.annotations.Transactional;
 
 import java.io.IOException;
@@ -25,6 +23,7 @@ import java.io.StringWriter;
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Method;
 import java.util.Collections;
+import java.util.List;
 import java.util.Set;
 
 import javax.annotation.Generated;
@@ -34,8 +33,8 @@ import javax.lang.model.element.Element;
 import javax.lang.model.element.ElementKind;
 import javax.lang.model.element.ExecutableElement;
 import javax.lang.model.element.Modifier;
+import javax.lang.model.element.NestingKind;
 import javax.lang.model.element.TypeElement;
-import javax.lang.model.element.VariableElement;
 import javax.lang.model.type.TypeKind;
 import javax.tools.Diagnostic;
 import javax.tools.Diagnostic.Kind;
@@ -43,6 +42,7 @@ import javax.tools.Diagnostic.Kind;
 import com.google.auto.common.BasicAnnotationProcessor;
 import com.google.auto.common.MoreElements;
 import com.google.common.base.Joiner;
+import com.google.common.base.Strings;
 import com.google.common.collect.ArrayListMultimap;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Lists;
@@ -50,15 +50,15 @@ import com.google.common.collect.Multimap;
 import com.google.common.collect.SetMultimap;
 import com.squareup.javapoet.AnnotationSpec;
 import com.squareup.javapoet.ClassName;
+import com.squareup.javapoet.CodeBlock;
 import com.squareup.javapoet.JavaFile;
 import com.squareup.javapoet.MethodSpec;
-import com.squareup.javapoet.ParameterSpec;
 import com.squareup.javapoet.ParameterizedTypeName;
 import com.squareup.javapoet.TypeName;
 import com.squareup.javapoet.TypeSpec;
 
 /**
- * @author Tercio Gaudencio Filho (tercio [at] imapia.com.br)
+ * @author Tercio Gaudencio Filho (terciofilho [at] gmail.com)
  */
 // FIXME: Cleanup code, it's a mess.
 // FIXME: Generalize this class, so we can create multiple method interceptors binded by some annotation.
@@ -82,34 +82,10 @@ final class TransactionalProcessingStep implements BasicAnnotationProcessor.Proc
     final Multimap<TypeElement, ExecutableElement> binds = ArrayListMultimap.create();
 
     for (final Element element : elementsByAnnotation.get(Transactional.class)) {
-      if (element.getKind() != ElementKind.METHOD) {
-        printError(element, "@Transactional element must be a Method!");
-        continue;
+      final TypeElement classElement = validateElement(element);
+      if (classElement != null) {
+        binds.put(classElement, MoreElements.asExecutable(element));
       }
-      if (element.getModifiers().contains(Modifier.PRIVATE)) {
-        printError(element, "@Transactional methods cannot be Private!");
-        continue;
-      }
-      if (element.getModifiers().contains(Modifier.STATIC)) {
-        printError(element, "@Transactional methods cannot be Static!");
-        continue;
-      }
-      final TypeElement typeElement = MoreElements.asType(element.getEnclosingElement());
-      if (typeElement.getModifiers().contains(Modifier.FINAL)) {
-        printError(element, "@Transactional class cannot be Final!");
-        continue;
-      }
-      if (!typeElement.getModifiers().contains(Modifier.ABSTRACT)) {
-        printError(element, "@Transactional method's class must be Abstract!");
-        continue;
-      }
-      if (typeElement.getEnclosedElements().stream()
-          .filter(enclosedElement -> enclosedElement.getKind() == ElementKind.CONSTRUCTOR).count() > 1) {
-        printError(typeElement, "@Transactional classes must have only one constructor!");
-        continue;
-      }
-
-      binds.put(typeElement, MoreElements.asExecutable(element));
     }
 
     generateTransactionals(binds);
@@ -127,11 +103,11 @@ final class TransactionalProcessingStep implements BasicAnnotationProcessor.Proc
       final TypeSpec.Builder classBuilder = TypeSpec.classBuilder(name) //
           .addOriginatingElement(typeElement) //
           .addAnnotation(AnnotationSpec.builder(Generated.class) //
-              .addMember("value", "$S", TransactionalProcessor.class.getCanonicalName()).build()) //
+              .addMember("value", "$S", this.getClass().getCanonicalName()).build()) //
           .addModifiers(Modifier.PUBLIC, Modifier.FINAL) //
           .addField(interceptorType, "interceptor", Modifier.PRIVATE, Modifier.FINAL) //
           .superclass(ClassName.get(typeElement)) //
-          .addAnnotations(Lists.transform(typeElement.getAnnotationMirrors(), AnnotationSpec::get));
+          .addAnnotations(Util.annotationMirrorToSpec(typeElement.getAnnotationMirrors()));
 
       // Constructor
       ExecutableElement constructorElement = null;
@@ -145,8 +121,9 @@ final class TransactionalProcessingStep implements BasicAnnotationProcessor.Proc
         }
       }
       final MethodSpec.Builder copyConstructor = constructorElement == null ? //
-          MethodSpec.constructorBuilder().addModifiers(Modifier.PUBLIC) : //
-          copyConstructor(constructorElement) //
+          MethodSpec.constructorBuilder().addModifiers(Modifier.PUBLIC)
+          : //
+          Util.copyConstructor(constructorElement) //
               .addAnnotation(Inject.class) //
               .addParameter(interceptorType, //
                   "interceptor", Modifier.FINAL) //
@@ -158,7 +135,8 @@ final class TransactionalProcessingStep implements BasicAnnotationProcessor.Proc
 
       // Methods
       for (final ExecutableElement methodElement : binds.get(typeElement)) {
-        final MethodSpec.Builder newMethod = copyMethod(MoreElements.asExecutable(methodElement));
+        final MethodSpec.Builder newMethod =
+            Util.copyMethod(MoreElements.asExecutable(methodElement), Transactional.class);
         final String methodName = methodElement.getSimpleName().toString();
 
         if (methodElement.getReturnType().getKind() == TypeKind.VOID) {
@@ -227,11 +205,17 @@ final class TransactionalProcessingStep implements BasicAnnotationProcessor.Proc
             Modifier.PRIVATE, //
             Modifier.FINAL);
 
-        // TODO: Try to get Annotation in compile time, without relying in reflection in runtime.
+        final List<TypeName> parametersTypes =
+            Lists.transform(methodElement.getParameters(), parameter -> TypeName.get(parameter.asType()));
+
+        final CodeBlock parameters = parametersTypes.size() == 0 ? //
+            CodeBlock.of("") //
+            : CodeBlock.builder().add(//
+                Strings.repeat(", $T.class", parametersTypes.size()), parametersTypes.toArray()).build();
         copyConstructor.addCode( //
-            "  method = super.getClass().getMethod($S, int.class);\n" //
+            "  method = super.getClass().getMethod($S$L);\n" //
                 + "  this.$LAnnotation = method.getAnnotation(Transactional.class);\n", //
-            methodName, methodName);
+            methodName, parameters, methodName);
       }
       copyConstructor.addCode("} catch (NoSuchMethodException | SecurityException e) {\n" //
           + "  throw new RuntimeException(e);\n" //
@@ -253,46 +237,74 @@ final class TransactionalProcessingStep implements BasicAnnotationProcessor.Proc
     }
   }
 
-  private MethodSpec.Builder copyConstructor(final ExecutableElement el) {
-    checkArgument(el.getKind() == ElementKind.CONSTRUCTOR);
-
-    return MethodSpec.constructorBuilder() //
-        .addModifiers(el.getModifiers()) //
-        .addParameters(Lists.transform(el.getParameters(), this::copyParameter)) //
-        .addAnnotations(Lists.transform(el.getAnnotationMirrors(), AnnotationSpec::get)) //
-        .addStatement("super($L)", //
-            Joiner.on(", ") //
-                .join(Lists.transform(el.getParameters(), //
-                    (final VariableElement variable) -> variable.getSimpleName().toString())));
-  }
-
-  private MethodSpec.Builder copyMethod(final ExecutableElement el) {
-    final MethodSpec.Builder method = MethodSpec.methodBuilder(el.getSimpleName().toString()) //
-        .addModifiers(el.getModifiers()) //
-        .addParameters(Lists.transform(el.getParameters(), this::copyParameter)) //
-        .addExceptions(Lists.transform(el.getThrownTypes(), typeMirror -> TypeName.get(typeMirror))) //
-        .addAnnotations(Lists.newArrayList(el.getAnnotationMirrors().stream()
-            .filter(annotationMirror -> !annotationMirror.getAnnotationType().toString()
-                .equals(Transactional.class.getName()))
-            .map(annotationMirror -> AnnotationSpec.get(annotationMirror)).iterator()));
-    if (el.getReturnType().getKind() != TypeKind.VOID) {
-      method.returns(TypeName.get(el.getReturnType()));
-    }
-    return method;
-  }
-
-  private ParameterSpec copyParameter(final VariableElement element) {
-    final Set<Modifier> modifiers = element.getModifiers();
-    return ParameterSpec
-        .builder(//
-            TypeName.get(element.asType()), //
-            element.getSimpleName().toString(), //
-            modifiers.toArray(new Modifier[modifiers.size()])) //
-        .addAnnotations(Lists.transform(element.getAnnotationMirrors(), AnnotationSpec::get)).build();
-  }
-
+  /**
+   * Print an Error message to Processing Environment.
+   * 
+   * @param element Element that generated the message.
+   * @param message Message to be printed.
+   */
   private void printError(final Element element, final String message) {
     processingEnv.getMessager().printMessage(Kind.ERROR, message, element);
+  }
+
+  /**
+   * Validate an Element prior generation step.
+   * 
+   * @param element Element to be validated.
+   * @return TypeElement of the declaring class.
+   */
+  private TypeElement validateElement(final Element element) {
+    final ElementKind kind = element.getKind();
+    final Set<Modifier> modifiers = element.getModifiers();
+
+    // Is a method
+    if (kind != ElementKind.METHOD) {
+      printError(element, "@Transactional element must be a Method!");
+      return null;
+    }
+    // Is not private
+    if (modifiers.contains(Modifier.PRIVATE)) {
+      printError(element, "@Transactional methods cannot be Private!");
+      return null;
+    }
+    // Is not static
+    if (modifiers.contains(Modifier.STATIC)) {
+      printError(element, "@Transactional methods cannot be Static!");
+      return null;
+    }
+
+    // Is inside a OuterClass or a Static InnerClass.
+    final TypeElement typeElement = MoreElements.asType(Util.scanForElementKind(ElementKind.CLASS, element));
+
+    // Cannot be Local
+    if (typeElement.getNestingKind() == NestingKind.LOCAL) {
+      printError(typeElement, "@Transactional method's class cannot be Local!");
+      return null;
+    }
+    // If Inner Class, must be static
+    if (typeElement.getNestingKind() == NestingKind.MEMBER && !typeElement.getModifiers().contains(Modifier.STATIC)) {
+      printError(typeElement, "@Transactional method's class must be Static if it's an Inner Class!");
+      return null;
+    }
+    // Cannot be Final
+    if (typeElement.getModifiers().contains(Modifier.FINAL)) {
+      printError(typeElement, "@Transactional method's class cannot be Final!");
+      return null;
+    }
+    // Must be Abstract
+    // XXX: This is to avoid user instantiating it instead the generated version of the class
+    if (!typeElement.getModifiers().contains(Modifier.ABSTRACT)) {
+      printError(typeElement, "@Transactional method's class must be Abstract!");
+      return null;
+    }
+    // Must have one constructor or no constructor at all
+    if (typeElement.getEnclosedElements().stream()
+        .filter(enclosedElement -> enclosedElement.getKind() == ElementKind.CONSTRUCTOR).count() > 1) {
+      printError(typeElement, "@Transactional method's class must have only one constructor!");
+      return null;
+    }
+
+    return typeElement;
   }
 
 }

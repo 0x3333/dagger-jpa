@@ -13,8 +13,8 @@
 
 package com.github.x3333.dagger.jpa;
 
-import com.github.x3333.dagger.MethodInterceptor;
-import com.github.x3333.dagger.MethodInvocation;
+import com.github.x3333.dagger.interceptor.MethodInterceptor;
+import com.github.x3333.dagger.interceptor.MethodInvocation;
 import com.github.x3333.dagger.jpa.annotations.Transactional;
 
 import javax.inject.Inject;
@@ -22,11 +22,11 @@ import javax.persistence.EntityManager;
 import javax.persistence.EntityTransaction;
 
 /**
- * Intercepts all methods in a class to made it transactional.
+ * Intercept a method to make it transactional.
  * 
- * @author Tercio Gaudencio Filho (tercio [at] imapia.com.br)
+ * @author Tercio Gaudencio Filho (terciofilho [at] gmail.com)
  */
-public class TransactionalInterceptor implements MethodInterceptor<Transactional> {
+public class TransactionalInterceptor implements MethodInterceptor {
 
   private final JpaService service;
   private final ThreadLocal<Boolean> shouldClose = new ThreadLocal<Boolean>();
@@ -41,7 +41,7 @@ public class TransactionalInterceptor implements MethodInterceptor<Transactional
   //
 
   @Override
-  public Object invoke(final MethodInvocation<Transactional> invocation) throws Throwable {
+  public Object invoke(final MethodInvocation invocation) throws Throwable {
     if (!service.hasBegun()) {
       service.begin();
       shouldClose.set(true);
@@ -61,7 +61,7 @@ public class TransactionalInterceptor implements MethodInterceptor<Transactional
     try {
       result = invocation.proceed();
     } catch (final Exception e) {
-      final boolean rollback = doRollback(transaction, e, invocation.annotation().rollbackOn());
+      final boolean rollback = doRollback(transaction, e, invocation.annotation(Transactional.class));
       if (rollback) {
         transaction.rollback();
       } else {
@@ -92,8 +92,8 @@ public class TransactionalInterceptor implements MethodInterceptor<Transactional
   private boolean doRollback(//
       final EntityTransaction transaction, //
       final Exception e, //
-      final Class<? extends Exception>[] rollbackOn) {
-    for (final Class<? extends Exception> rollbackException : rollbackOn) {
+      final Transactional transactional) {
+    for (final Class<? extends Exception> rollbackException : transactional.rollbackOn()) {
       if (rollbackException.isInstance(e)) {
         return true;
       }

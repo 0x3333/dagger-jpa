@@ -13,8 +13,6 @@
 
 package com.github.x3333.dagger.jpa;
 
-import com.github.x3333.dagger.MethodInterceptor;
-import com.github.x3333.dagger.jpa.annotations.Transactional;
 import com.github.x3333.dagger.jpa.impl.JpaServiceImpl;
 
 import java.util.Map;
@@ -25,7 +23,7 @@ import javax.persistence.EntityManager;
 import dagger.Module;
 import dagger.Provides;
 
-// TODO: Move this class to a generated one by the Processor
+// TODO: Move this class to a generated one by a Processor
 // So we don't need to distribute the dagger generated factories, which can cause problems in applications with different versions of dagger
 @Module
 public class JpaModule {
@@ -58,8 +56,10 @@ public class JpaModule {
     return service.get();
   }
 
+  // TODO: In the generated version, create the binds for the Interceptors availables
+
   @Provides
-  MethodInterceptor<Transactional> providesTransactionalInterceptor(final JpaService service) {
+  TransactionalInterceptor providesTransactionalInterceptor(final JpaService service) {
     return new TransactionalInterceptor(service);
   }
 
