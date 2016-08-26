@@ -57,7 +57,7 @@ public class JpaModule {
     return service.get();
   }
 
-  // TODO: In the generated version, create the binds for the Interceptors availables
+  // FIXME: Those binds should be in a generated class.
 
   @Provides
   TransactionalInterceptor providesTransactionalInterceptor(final TransactionalInterceptor impl) {
