@@ -11,10 +11,10 @@
  * and limitations under the License.
  */
 
-package com.github.x3333.dagger.jpa.annotations;
+package com.github.x3333.dagger.interceptor.jpa;
 
 import static java.lang.annotation.ElementType.METHOD;
-import static java.lang.annotation.RetentionPolicy.CLASS;
+import static java.lang.annotation.RetentionPolicy.RUNTIME;
 
 import java.lang.annotation.Documented;
 import java.lang.annotation.Retention;
@@ -34,9 +34,9 @@ import java.lang.annotation.Target;
  * @author Tercio Gaudencio Filho (terciofilho [at] gmail.com)
  */
 @Documented
-@Retention(CLASS)
+@Retention(RUNTIME)
 @Target(METHOD)
-public @interface Log {
+public @interface Transactional {
 
   /**
    * A list of exceptions to rollback on, if thrown by the transactional method.

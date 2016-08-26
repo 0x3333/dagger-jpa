@@ -11,9 +11,7 @@
  * and limitations under the License.
  */
 
-package com.github.x3333.dagger.jpa;
-
-import com.github.x3333.dagger.jpa.annotations.Transactional;
+package com.github.x3333.dagger.interceptor.jpa;
 
 import javax.persistence.EntityManager;
 

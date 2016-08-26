@@ -14,6 +14,7 @@
 package com.github.x3333.dagger.interceptor;
 
 import java.lang.annotation.Annotation;
+import java.lang.reflect.Method;
 
 import com.google.common.collect.Iterables;
 
@@ -27,18 +28,24 @@ import com.google.common.collect.Iterables;
  */
 public interface MethodInvocation {
 
-  Iterable<Annotation> annotations();
+  Object getInstance();
 
-  Object proceed();
+  Method getMethod();
+
+  Iterable<Annotation> getAnnotations();
+
+  Object proceed() throws Throwable;
 
   /**
    * Return the Annotation instance of the Method based on it's Class.
    * 
+   * @param <A> Type of the Annotation to be returned.
+   * @param annotationClass Class of the Annotation to be returned.
    * @return Annotation instance if present, or null otherwise.
    */
   @SuppressWarnings("unchecked")
-  default <T extends Annotation> T annotation(final Class<T> annotationClass) {
-    return (T) Iterables.find(annotations(), a -> a.getClass().equals(annotationClass), null);
+  default <A extends Annotation> A annotation(final Class<A> annotationClass) {
+    return (A) Iterables.find(getAnnotations(), a -> a.getClass().equals(annotationClass), null);
   }
 
 }

@@ -11,17 +11,14 @@
  * and limitations under the License.
  */
 
-package com.github.x3333.dagger.interceptor.service;
+package com.github.x3333.dagger.interceptor.jpa;
 
-import com.github.x3333.dagger.interceptor.MethodInterceptor;
-import com.github.x3333.dagger.interceptor.processor.InterceptorService;
-import com.github.x3333.dagger.interceptor.processor.Util;
-import com.github.x3333.dagger.jpa.TransactionalInterceptor;
-import com.github.x3333.dagger.jpa.annotations.Transactional;
+import com.github.x3333.dagger.interceptor.processor.InterceptorHandler;
 
 import java.lang.annotation.Annotation;
 import java.util.Set;
 
+import javax.lang.model.element.Element;
 import javax.lang.model.element.ElementKind;
 import javax.lang.model.element.ExecutableElement;
 import javax.lang.model.element.Modifier;
@@ -35,8 +32,8 @@ import com.google.common.base.MoreObjects;
 /**
  * @author Tercio Gaudencio Filho (terciofilho [at] gmail.com)
  */
-@AutoService(InterceptorService.class)
-public class TransactionalInterceptorService implements InterceptorService {
+@AutoService(InterceptorHandler.class)
+public class TransactionalInterceptorHandler implements InterceptorHandler {
 
   @Override
   public Class<? extends Annotation> annotation() {
@@ -44,7 +41,7 @@ public class TransactionalInterceptorService implements InterceptorService {
   }
 
   @Override
-  public Class<? extends MethodInterceptor> methodInterceptor() {
+  public Class<TransactionalInterceptor> methodInterceptorClass() {
     return TransactionalInterceptor.class;
   }
 
@@ -67,7 +64,11 @@ public class TransactionalInterceptorService implements InterceptorService {
     }
 
     // Is inside a OuterClass or a Static InnerClass.
-    final TypeElement classElement = MoreElements.asType(Util.scanForElementKind(ElementKind.CLASS, methodElement));
+    Element enclosingElement = methodElement.getEnclosingElement();
+    while (enclosingElement != null && enclosingElement.getKind() != ElementKind.CLASS) {
+      enclosingElement = enclosingElement.getEnclosingElement();
+    }
+    final TypeElement classElement = MoreElements.asType(enclosingElement);
 
     // Cannot be Local
     if (classElement.getNestingKind() == NestingKind.LOCAL) {

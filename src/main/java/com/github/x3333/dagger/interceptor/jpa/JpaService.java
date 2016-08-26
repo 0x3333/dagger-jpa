@@ -11,7 +11,7 @@
  * and limitations under the License.
  */
 
-package com.github.x3333.dagger.jpa;
+package com.github.x3333.dagger.interceptor.jpa;
 
 import javax.inject.Provider;
 import javax.persistence.EntityManager;

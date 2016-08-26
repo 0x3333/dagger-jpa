@@ -15,7 +15,8 @@ package com.github.x3333.dagger.interceptor.processor;
 
 import static com.google.common.base.Preconditions.checkArgument;
 
-import java.lang.annotation.Annotation;
+import java.util.List;
+import java.util.Set;
 
 import javax.lang.model.element.AnnotationMirror;
 import javax.lang.model.element.Element;
@@ -23,9 +24,7 @@ import javax.lang.model.element.ElementKind;
 import javax.lang.model.element.ExecutableElement;
 import javax.lang.model.element.Modifier;
 import javax.lang.model.element.VariableElement;
-import javax.lang.model.type.TypeKind;
 
-import com.google.auto.common.MoreTypes;
 import com.google.common.base.Joiner;
 import com.google.common.collect.Iterables;
 import com.google.common.collect.Lists;
@@ -39,8 +38,7 @@ import com.squareup.javapoet.TypeName;
  * 
  * @author Tercio Gaudencio Filho (terciofilho [at] gmail.com)
  */
-// FIXME: Remove the visibility to outside
-public final class Util {
+final class Util {
 
   /**
    * Return the nearest Element of Kind <code>kind</code> in the enclosing elements.
@@ -49,7 +47,7 @@ public final class Util {
    * @param element Element that will be scanned.
    * @return Nearest Element.
    */
-  public static Element scanForElementKind(final ElementKind kind, final Element element) {
+  static Element scanForElementKind(final ElementKind kind, final Element element) {
     Element enclosingElement = element.getEnclosingElement();
     while (enclosingElement != null && enclosingElement.getKind() != kind) {
       enclosingElement = enclosingElement.getEnclosingElement();
@@ -57,49 +55,74 @@ public final class Util {
     return enclosingElement;
   }
 
-  public static Iterable<AnnotationSpec> annotationMirrorToSpec(final Iterable<? extends AnnotationMirror> mirrors) {
+  /**
+   * Convert a {@link AnnotationMirror}s to AnnotationSpec.
+   */
+  static Iterable<AnnotationSpec> toSpec(final Iterable<? extends AnnotationMirror> mirrors) {
     return Iterables.transform(mirrors, AnnotationSpec::get);
   }
 
-  public static MethodSpec.Builder copyConstructor(final ExecutableElement el) {
-    checkArgument(el.getKind() == ElementKind.CONSTRUCTOR);
+  /**
+   * Convert a Element iterable to a Iterable of Strings using Element::getSimpleName().
+   */
+  static Iterable<String> simpleNames(final Iterable<? extends Element> elements) {
+    return Iterables.transform(elements, e -> e.getSimpleName().toString());
+  }
+
+  /**
+   * Clone a Constructor ExecutableElement into a MethodSpec.Builder instance.
+   * 
+   * <p>
+   * The cloned constructor will call super as first statement.
+   */
+  static MethodSpec.Builder cloneConstructor(final ExecutableElement element) {
+    checkArgument(element.getKind() == ElementKind.CONSTRUCTOR);
+
+    final Set<Modifier> modifiers = element.getModifiers();
+    final List<ParameterSpec> parameters = Lists.transform(element.getParameters(), Util::cloneParameter);
+    final Iterable<AnnotationSpec> annotations = toSpec(element.getAnnotationMirrors());
 
     return MethodSpec.constructorBuilder() //
-        .addModifiers(el.getModifiers()) //
-        .addParameters(Lists.transform(el.getParameters(), parameter -> copyParameter(parameter).build())) //
-        .addAnnotations(Util.annotationMirrorToSpec(el.getAnnotationMirrors())) //
-        .addStatement("super($L)", //
-            Joiner.on(", ") //
-                .join(Lists.transform(el.getParameters(), //
-                    (final VariableElement variable) -> variable.getSimpleName().toString())));
+        .addModifiers(modifiers) //
+        .addParameters(parameters) //
+        .addAnnotations(annotations) //
+        .addStatement("super($L)", Joiner.on(", ").join(simpleNames(element.getParameters())));
   }
 
-  public static MethodSpec.Builder copyMethod(final ExecutableElement el,
-      final Class<? extends Annotation> targetAnnotation) {
-    final Iterable<AnnotationSpec> annotations = Util.annotationMirrorToSpec(//
-        Iterables.filter(//
-            el.getAnnotationMirrors(), //
-            mirror -> !MoreTypes.isTypeOf(targetAnnotation, mirror.getAnnotationType())));
+  /**
+   * Clone a Method ExecutableElement into a MethodSpec.Builder instance.
+   * 
+   * <p>
+   * This implementation doesn't clone annotations.
+   */
+  static MethodSpec.Builder cloneMethod(final ExecutableElement element) {
+    checkArgument(element.getKind() == ElementKind.METHOD);
 
-    final MethodSpec.Builder method = MethodSpec.methodBuilder(el.getSimpleName().toString()) //
-        .addModifiers(el.getModifiers()) //
-        .addParameters(Lists.transform(el.getParameters(), parameter -> copyParameter(parameter).build())) //
-        .addExceptions(Lists.transform(el.getThrownTypes(), typeMirror -> TypeName.get(typeMirror))) //
-        .addAnnotations(annotations);
-    if (el.getReturnType().getKind() != TypeKind.VOID) {
-      method.returns(TypeName.get(el.getReturnType()));
-    }
-    return method;
+    final String name = element.getSimpleName().toString();
+    final Set<Modifier> modifiers = element.getModifiers();
+    final List<ParameterSpec> parameters = Lists.transform(element.getParameters(), Util::cloneParameter);
+    final List<TypeName> exceptions = Lists.transform(element.getThrownTypes(), TypeName::get);
+    final TypeName returnType = TypeName.get(element.getReturnType());
+
+    return MethodSpec.methodBuilder(name) //
+        .addModifiers(modifiers) //
+        .addParameters(parameters) //
+        .addExceptions(exceptions) //
+        .returns(returnType);
   }
 
-  public static ParameterSpec.Builder copyParameter(final VariableElement element) {
+  /**
+   * Clone a Parameter VariableElement into a ParameterSpec instance.
+   */
+  static ParameterSpec cloneParameter(final VariableElement element) {
+    checkArgument(element.getKind() == ElementKind.PARAMETER);
+
+    final TypeName type = TypeName.get(element.asType());
+    final String name = element.getSimpleName().toString();
     final Modifier[] modifiers = element.getModifiers().toArray(new Modifier[element.getModifiers().size()]);
-    return ParameterSpec
-        .builder(//
-            TypeName.get(element.asType()), //
-            element.getSimpleName().toString(), //
-            modifiers) //
-        .addAnnotations(Util.annotationMirrorToSpec(element.getAnnotationMirrors())); //
+    final Iterable<AnnotationSpec> annotations = toSpec(element.getAnnotationMirrors());
+
+    return ParameterSpec.builder(type, name, modifiers).addAnnotations(annotations).build();
   }
 
 }

@@ -55,6 +55,12 @@
         </dependency>
 
         <dependency>
+            <groupId>com.google.auto.value</groupId>
+            <artifactId>auto-value</artifactId>
+            <version>1.2</version>
+            <scope>provided</scope>
+        </dependency>
+        <dependency>
             <groupId>com.google.auto</groupId>
             <artifactId>auto-common</artifactId>
             <version>0.6</version>
@@ -78,14 +84,6 @@
             <version>1.7.21</version>
             <scope>provided</scope>
         </dependency>
-
-        <!-- Testing -->
-        <dependency>
-            <groupId>junit</groupId>
-            <artifactId>junit</artifactId>
-            <version>3.8.1</version>
-            <scope>test</scope>
-        </dependency>
     </dependencies>
 
     <build>
@@ -99,8 +97,6 @@
                     <source>1.8</source>
                     <target>1.8</target>
                     <compilerId>jdt</compilerId>
-                    <!-- Disable annotation processors during normal compilation -->
-                    <compilerArgument>-proc:none</compilerArgument>
                 </configuration>
                 <dependencies>
                     <dependency>
@@ -108,37 +104,6 @@
                         <artifactId>tycho-compiler-jdt</artifactId>
                         <version>0.25.0</version>
                     </dependency>
-                </dependencies>
-            </plugin>
-            
-            <!-- Run annotation processors on src/main/java sources -->
-            <plugin>
-                <groupId>org.bsc.maven</groupId>
-                <artifactId>maven-processor-plugin</artifactId>
-                <version>3.1.0</version>
-                <configuration>
-                    <processors>
-                        <processor>com.google.auto.service.processor.AutoServiceProcessor</processor>
-                        <processor>dagger.internal.codegen.ComponentProcessor</processor>
-                    </processors>
-                </configuration>
-                <executions>
-                    <execution>
-                        <id>process</id>
-                        <goals>
-                            <goal>process</goal>
-                        </goals>
-                        <phase>generate-sources</phase>
-                    </execution>
-                    <execution>
-                        <id>process-test</id>
-                        <goals>
-                            <goal>process-test</goal>
-                        </goals>
-                        <phase>generate-test-sources</phase>
-                    </execution>
-                </executions>
-                <dependencies>
                     <dependency>
                         <groupId>com.google.dagger</groupId>
                         <artifactId>dagger-compiler</artifactId>
@@ -146,7 +111,7 @@
                     </dependency>
                 </dependencies>
             </plugin>
-            
+
             <!-- Checkstyle -->
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>

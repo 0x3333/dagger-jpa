@@ -13,94 +13,56 @@
 
 package com.github.x3333.dagger.interceptor.processor;
 
-import com.github.x3333.dagger.jpa.annotations.Transactional;
+import static com.google.common.base.Preconditions.checkState;
 
 import java.lang.annotation.Annotation;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.stream.Collectors;
 
 import javax.lang.model.element.ElementKind;
 import javax.lang.model.element.ExecutableElement;
 import javax.lang.model.element.TypeElement;
 
 import com.google.auto.common.MoreElements;
-import com.google.common.base.MoreObjects;
+import com.google.auto.value.AutoValue;
 import com.google.common.collect.ImmutableList;
 
 /**
  * @author Tercio Gaudencio Filho (terciofilho [at] gmail.com)
  */
-public class MethodBind {
+@AutoValue
+abstract class MethodBind {
 
-  public static Builder builder(final ExecutableElement method) {
-    return new Builder(method);
-  }
+  private TypeElement classElement;
 
-  public static class Builder {
-
-    private final ExecutableElement method;
-    private final ImmutableList.Builder<Class<? extends Annotation>> annotations;
-
-    public Builder(final ExecutableElement method) {
-      this.method = method;
-      annotations = ImmutableList.builder();
+  TypeElement getClassElement() {
+    if (classElement == null) {
+      classElement = MoreElements.asType(Util.scanForElementKind(ElementKind.CLASS, getMethodElement()));
     }
-
-    public Builder annotation(final Class<? extends Annotation> annotation) {
-      annotations.add(annotation);
-      return this;
-    }
-
-    public MethodBind build() {
-      return new MethodBind(method, annotations.build());
-    }
-  }
-
-  //
-
-  private final TypeElement classElement;
-  private final ExecutableElement methodElement;
-  private final ImmutableList<Class<? extends Annotation>> annotations;
-
-  //
-
-  private MethodBind(final ExecutableElement methodElement,
-      final ImmutableList<Class<? extends Annotation>> annotations) {
-    classElement = MoreElements.asType(Util.scanForElementKind(ElementKind.CLASS, methodElement));
-    this.methodElement = methodElement;
-    this.annotations = annotations;
-  }
-
-  //
-
-  public TypeElement getClassElement() {
     return classElement;
   }
 
-  public ExecutableElement getMethodElement() {
-    return methodElement;
+  abstract ExecutableElement getMethodElement();
+
+  abstract ImmutableList<Class<? extends Annotation>> getAnnotations();
+
+  static Builder builder() {
+    return new AutoValue_MethodBind.Builder();
   }
 
-  public ImmutableList<Class<? extends Annotation>> getAnnotations() {
-    return annotations;
+  @AutoValue.Builder
+  abstract static class Builder {
+
+    abstract Builder setMethodElement(final ExecutableElement methodElement);
+
+    abstract ImmutableList.Builder<Class<? extends Annotation>> annotationsBuilder();
+
+    abstract MethodBind autoBuild();
+
+    public MethodBind build() {
+      final MethodBind methodBind = autoBuild();
+      checkState(methodBind.getAnnotations().size() > 0, "Method Binds must have at least one annotation!");
+      return methodBind;
+    }
+
   }
 
-  public static void main(final String[] args) {
-    final List<Class<?>> as = new ArrayList<>();
-    as.add(Transactional.class);
-    as.add(Deprecated.class);
-    System.out.println(as.stream().map(a -> a.getSimpleName()).collect(Collectors.joining(", ")));
-  }
-
-  //
-
-  @Override
-  public String toString() {
-    return MoreObjects.toStringHelper(this)//
-        .add("class", classElement.getSimpleName())//
-        .add("method", methodElement.toString())//
-        .add("annotations", annotations.stream().map(a -> a.getSimpleName()).collect(Collectors.joining(", ")))
-        .toString();
-  }
 }

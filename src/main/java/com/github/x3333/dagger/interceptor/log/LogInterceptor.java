@@ -11,12 +11,12 @@
  * and limitations under the License.
  */
 
-package com.github.x3333.dagger.jpa;
+package com.github.x3333.dagger.interceptor.log;
 
 import com.github.x3333.dagger.interceptor.MethodInterceptor;
 import com.github.x3333.dagger.interceptor.MethodInvocation;
 
-import java.util.Date;
+import org.slf4j.LoggerFactory;
 
 /**
  * Intercepts the method and print invocation {@link #toString()}.
@@ -26,10 +26,13 @@ import java.util.Date;
 public class LogInterceptor implements MethodInterceptor {
 
   @Override
-  public Object invoke(final MethodInvocation invocation) throws Throwable {
-    System.out.println(new Date() + " - " + invocation);
+  @SuppressWarnings("unchecked")
+  public <T> T invoke(final MethodInvocation invocation) throws Throwable {
+    LoggerFactory.getLogger(invocation.getInstance().getClass()).debug("Method {} of {} invoked", //
+        invocation.getMethod(), //
+        invocation.getInstance().getClass().getName() + "@" + Integer.toHexString(invocation.getInstance().hashCode()));
 
-    return invocation.proceed();
+    return (T) invocation.proceed();
   }
 
 }

@@ -11,12 +11,9 @@
  * and limitations under the License.
  */
 
-package com.github.x3333.dagger.interceptor.service;
+package com.github.x3333.dagger.interceptor.log;
 
-import com.github.x3333.dagger.interceptor.MethodInterceptor;
-import com.github.x3333.dagger.interceptor.processor.InterceptorService;
-import com.github.x3333.dagger.jpa.LogInterceptor;
-import com.github.x3333.dagger.jpa.annotations.Log;
+import com.github.x3333.dagger.interceptor.processor.InterceptorHandler;
 
 import java.lang.annotation.Annotation;
 
@@ -26,8 +23,8 @@ import com.google.common.base.MoreObjects;
 /**
  * @author Tercio Gaudencio Filho (terciofilho [at] gmail.com)
  */
-@AutoService(InterceptorService.class)
-public class LogInterceptorService implements InterceptorService {
+@AutoService(InterceptorHandler.class)
+public class LogInterceptorHandler implements InterceptorHandler {
 
   @Override
   public Class<? extends Annotation> annotation() {
@@ -35,7 +32,7 @@ public class LogInterceptorService implements InterceptorService {
   }
 
   @Override
-  public Class<? extends MethodInterceptor> methodInterceptor() {
+  public Class<LogInterceptor> methodInterceptorClass() {
     return LogInterceptor.class;
   }
 

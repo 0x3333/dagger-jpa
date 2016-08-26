@@ -11,11 +11,11 @@
  * and limitations under the License.
  */
 
-package com.github.x3333.dagger.jpa.impl;
+package com.github.x3333.dagger.interceptor.jpa.impl;
 
 import static com.google.common.base.Preconditions.checkState;
 
-import com.github.x3333.dagger.jpa.JpaService;
+import com.github.x3333.dagger.interceptor.jpa.JpaService;
 
 import java.util.Map;
 

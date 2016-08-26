@@ -11,11 +11,10 @@
  * and limitations under the License.
  */
 
-package com.github.x3333.dagger.jpa;
+package com.github.x3333.dagger.interceptor.jpa;
 
 import com.github.x3333.dagger.interceptor.MethodInterceptor;
 import com.github.x3333.dagger.interceptor.MethodInvocation;
-import com.github.x3333.dagger.jpa.annotations.Transactional;
 
 import javax.inject.Inject;
 import javax.persistence.EntityManager;
@@ -41,7 +40,8 @@ public class TransactionalInterceptor implements MethodInterceptor {
   //
 
   @Override
-  public Object invoke(final MethodInvocation invocation) throws Throwable {
+  @SuppressWarnings("unchecked")
+  public <T> T invoke(final MethodInvocation invocation) throws Throwable {
     if (!service.hasBegun()) {
       service.begin();
       shouldClose.set(true);
@@ -52,14 +52,14 @@ public class TransactionalInterceptor implements MethodInterceptor {
 
     // If there is an active transaction, join.
     if (transaction.isActive()) {
-      return invocation.proceed();
+      return (T) invocation.proceed();
     }
 
     transaction.begin();
 
-    final Object result;
+    final T result;
     try {
-      result = invocation.proceed();
+      result = (T) invocation.proceed();
     } catch (final Exception e) {
       final boolean rollback = doRollback(transaction, e, invocation.annotation(Transactional.class));
       if (rollback) {

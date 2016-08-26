@@ -11,9 +11,10 @@
  * and limitations under the License.
  */
 
-package com.github.x3333.dagger.jpa;
+package com.github.x3333.dagger.interceptor.jpa;
 
-import com.github.x3333.dagger.jpa.impl.JpaServiceImpl;
+import com.github.x3333.dagger.interceptor.jpa.impl.JpaServiceImpl;
+import com.github.x3333.dagger.interceptor.log.LogInterceptor;
 
 import java.util.Map;
 
@@ -59,8 +60,13 @@ public class JpaModule {
   // TODO: In the generated version, create the binds for the Interceptors availables
 
   @Provides
-  TransactionalInterceptor providesTransactionalInterceptor(final JpaService service) {
-    return new TransactionalInterceptor(service);
+  TransactionalInterceptor providesTransactionalInterceptor(final TransactionalInterceptor impl) {
+    return impl;
+  }
+
+  @Provides
+  LogInterceptor providesLogInterceptor(final LogInterceptor impl) {
+    return impl;
   }
 
 }

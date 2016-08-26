@@ -20,28 +20,33 @@ import java.lang.annotation.Annotation;
 import javax.lang.model.element.ExecutableElement;
 
 /**
- * A Marker interface for Method Interceptor.
+ * A Marker interface for Method Interceptor handlers.
  * 
  * <p>
  * MethodInterceptors must be a Java Service.
  * 
  * @author Tercio Gaudencio Filho (terciofilho [at] gmail.com)
  */
-public interface InterceptorService {
+public interface InterceptorHandler {
 
   /**
-   * The {@link Annotation} class that this service is binded to.
+   * The {@link Annotation} class that this handler is binded to.
+   * 
+   * @return Annotation class binded to this Handler.
    */
   Class<? extends Annotation> annotation();
 
   /**
-   * The {@link MethodInterceptor} class that this service is binded to.
+   * The {@link MethodInterceptor} class that this handler is binded to.
+   * 
+   * @return Interceptor class binded to this Handler.
    */
-  Class<? extends MethodInterceptor> methodInterceptor();
+  Class<? extends MethodInterceptor> methodInterceptorClass();
 
   /**
    * Validate a Method Element to be accepted by the Processor.
    * 
+   * @param methodElement ExecutableElement to be validated.
    * @return <code>Null</code> if this element has passed validation, otherwise, a String with the error message.
    */
   default String validateMethod(final ExecutableElement methodElement) {

@@ -20,6 +20,6 @@ package com.github.x3333.dagger.interceptor;
  */
 public interface MethodInterceptor {
 
-  Object invoke(MethodInvocation invocation) throws Throwable;
+  <T> T invoke(MethodInvocation invocation) throws Throwable;
 
 }
