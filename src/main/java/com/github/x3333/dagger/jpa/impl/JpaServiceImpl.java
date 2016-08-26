@@ -11,11 +11,11 @@
  * and limitations under the License.
  */
 
-package com.github.x3333.dagger.interceptor.jpa.impl;
+package com.github.x3333.dagger.jpa.impl;
 
 import static com.google.common.base.Preconditions.checkState;
 
-import com.github.x3333.dagger.interceptor.jpa.JpaService;
+import com.github.x3333.dagger.jpa.JpaService;
 
 import java.util.Map;
 
@@ -26,6 +26,8 @@ import javax.persistence.Persistence;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import com.google.common.base.Preconditions;
 
 /**
  * Default implementation of {@link JpaService}.
@@ -90,11 +92,9 @@ public class JpaServiceImpl implements JpaService {
   @Override
   public EntityManager get() {
     logger.debug("Get EntityManager");
-    if (!hasBegun()) {
-      begin();
-    }
+    Preconditions.checkState(hasBegun(), "EntityManager requested, but work hasn't been initiated. "
+        + "You should call JpaService.being() and JpaService.end(), or use Transactional method interceptor.");
 
-    // FIXME: Return a Wrapper to the EntityManager, so when the user closes it we call #end() here.
     return entityManager.get();
   }
 

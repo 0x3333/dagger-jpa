@@ -11,21 +11,21 @@
  * and limitations under the License.
  */
 
-package com.github.x3333.dagger.interceptor.jpa;
+package com.github.x3333.dagger.jpa;
 
-import com.github.x3333.dagger.interceptor.MethodInterceptor;
-import com.github.x3333.dagger.interceptor.MethodInvocation;
+import com.github.x3333.dagger.aop.MethodInterceptor;
+import com.github.x3333.dagger.aop.MethodInvocation;
 
 import javax.inject.Inject;
 import javax.persistence.EntityManager;
 import javax.persistence.EntityTransaction;
 
 /**
- * Intercept a method to make it transactional.
+ * Make a intercepted method transactional using a {@link JpaService}.
  * 
  * @author Tercio Gaudencio Filho (terciofilho [at] gmail.com)
  */
-public class TransactionalInterceptor implements MethodInterceptor {
+public final class TransactionalInterceptor implements MethodInterceptor {
 
   private final JpaService service;
   private final ThreadLocal<Boolean> shouldClose = new ThreadLocal<Boolean>();

@@ -11,15 +11,26 @@
  * and limitations under the License.
  */
 
-package com.github.x3333.dagger.interceptor.jpa;
+package com.github.x3333.dagger.jpa;
 
 import javax.inject.Provider;
 import javax.persistence.EntityManager;
 
 /**
+ * JPA Persistence service. Used tomanage the overall startup and stop of the persistence module including manual control of
+ * {@link EntityManager}.
+ * 
+ * <p>
+ * In a non-transactional({@link Transactional @Transactional}) threads you must {@link #begin()} before requesting a {@link EntityManager}
+ * and {@link #end()} after using it. Asking for a {@link EntityManager} before {@link #begin()} will thrown an exception.
+ * 
+ * <p>
+ * Operations will always be binded to the local thread. Beginning/ending corresponds to opening and closing the thread's
+ * {@code EntityManager}. Always {@link #end()} in a <code>finally</code> block.
+ * 
  * @author Tercio Gaudencio Filho (terciofilho [at] gmail.com)
  */
-public interface JpaService extends Provider<EntityManager>, JpaWork {
+public interface JpaService extends Provider<EntityManager> {
 
   /**
    * Starts the underlying persistence engine and makes JpaService ready for use. For instance, it creates an EntityManagerFactory and may
@@ -42,9 +53,26 @@ public interface JpaService extends Provider<EntityManager>, JpaWork {
   void stop();
 
   /**
-   * Provides a EntityManager instance.
+   * Provides an EntityManager instance.
    */
   @Override
   EntityManager get();
+
+  /**
+   * Begin EntityManager work.
+   */
+  void begin();
+
+  /**
+   * End EntityManager work.
+   */
+  void end();
+
+  /**
+   * Check if EntityManager has already begun.
+   * 
+   * @return boolean true if already begun, false otherwise.
+   */
+  boolean hasBegun();
 
 }

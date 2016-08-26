@@ -37,6 +37,11 @@
 
     <dependencies>
         <dependency>
+            <groupId>com.github.0x3333</groupId>
+            <artifactId>dagger-aop</artifactId>
+            <version>0.0.1-SNAPSHOT</version>
+        </dependency>
+        <dependency>
             <groupId>com.google.dagger</groupId>
             <artifactId>dagger</artifactId>
             <version>${dagger.version}</version>
@@ -54,12 +59,6 @@
             <version>19.0</version>
         </dependency>
 
-        <dependency>
-            <groupId>com.google.auto.value</groupId>
-            <artifactId>auto-value</artifactId>
-            <version>1.2</version>
-            <scope>provided</scope>
-        </dependency>
         <dependency>
             <groupId>com.google.auto</groupId>
             <artifactId>auto-common</artifactId>
@@ -97,6 +96,7 @@
                     <source>1.8</source>
                     <target>1.8</target>
                     <compilerId>jdt</compilerId>
+                    <compilerArgument>-proc:none</compilerArgument>
                 </configuration>
                 <dependencies>
                     <dependency>
@@ -104,6 +104,22 @@
                         <artifactId>tycho-compiler-jdt</artifactId>
                         <version>0.25.0</version>
                     </dependency>
+                </dependencies>
+            </plugin>
+            <plugin>
+                <groupId>org.bsc.maven</groupId>
+                <artifactId>maven-processor-plugin</artifactId>
+                <version>3.1.0</version>
+                <executions>
+                    <execution>
+                        <id>process</id>
+                        <goals>
+                            <goal>process</goal>
+                        </goals>
+                        <phase>generate-sources</phase>
+                    </execution>
+                </executions>
+                <dependencies>
                     <dependency>
                         <groupId>com.google.dagger</groupId>
                         <artifactId>dagger-compiler</artifactId>

@@ -11,7 +11,7 @@
  * and limitations under the License.
  */
 
-package com.github.x3333.dagger.interceptor.log;
+package com.github.x3333.dagger.jpa;
 
 import static java.lang.annotation.ElementType.METHOD;
 import static java.lang.annotation.RetentionPolicy.RUNTIME;
@@ -36,7 +36,7 @@ import java.lang.annotation.Target;
 @Documented
 @Retention(RUNTIME)
 @Target(METHOD)
-public @interface Log {
+public @interface Transactional {
 
   /**
    * A list of exceptions to rollback on, if thrown by the transactional method.

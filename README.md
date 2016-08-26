@@ -59,14 +59,14 @@ public class YourModule {
 ```
 
 ```java
-package com.github.x3333.dagger.interceptor.jpa.tester;
+package com.github.x3333.dagger.jpa.tester;
 
 import javax.inject.Inject;
 import javax.inject.Provider;
 
 import javax.persistence.EntityManager;
 
-import com.github.x3333.dagger.interceptor.jpa.Transactional;
+import com.github.x3333.dagger.jpa.Transactional;
 
 
 public abstract class DbWork {
