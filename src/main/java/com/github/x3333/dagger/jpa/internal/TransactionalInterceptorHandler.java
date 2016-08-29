@@ -18,7 +18,7 @@ import static javax.lang.model.element.Modifier.PRIVATE;
 import static javax.lang.model.element.Modifier.PUBLIC;
 
 import com.github.x3333.dagger.aop.InterceptorHandler;
-import com.github.x3333.dagger.aop.internal.InterceptorProcessor;
+import com.github.x3333.dagger.aop.SourceGenerator;
 import com.github.x3333.dagger.jpa.JpaService;
 import com.github.x3333.dagger.jpa.Transactional;
 import com.github.x3333.dagger.jpa.TransactionalInterceptor;
@@ -92,7 +92,7 @@ public class TransactionalInterceptorHandler implements InterceptorHandler {
         .addJavadoc("This class is the default Dagger module for JPA.\n\n" + "<p>\n"
             + "This has been created in your project so Dagger can generate \n"
             + "Factory classes in your project, freeing us from distributing generated code.\n")//
-        .addAnnotation(InterceptorProcessor.generatedAnnotation(TransactionalInterceptorHandler.class))//
+        .addAnnotation(SourceGenerator.generatedAnnotation(TransactionalInterceptorHandler.class))//
         .addAnnotation(Module.class)//
         .addField(unitNameType, "persistenceUnitName", PRIVATE, FINAL)//
         .addField(propertiesType, "persistenceProperties", PRIVATE, FINAL);
@@ -140,7 +140,7 @@ public class TransactionalInterceptorHandler implements InterceptorHandler {
         .addMethod(entityManagerMethod)//
         .addMethod(transactionalInterceptorMethod);
 
-    InterceptorProcessor.writeClass(//
+    SourceGenerator.writeClass(//
         processingEnv, //
         DAGGER_JPA_PACKAGE, //
         classBuilder.build());
@@ -155,7 +155,7 @@ public class TransactionalInterceptorHandler implements InterceptorHandler {
         .addJavadoc("This class is used as the default 'implementation' for TransactionalInterceptor.\n\n" + "<p>\n"
             + "This has been created in your project so Dagger can generate \n"
             + "Factory classes in your project, freeing us from distributing generated code.\n")//
-        .addAnnotation(InterceptorProcessor.generatedAnnotation(TransactionalInterceptorHandler.class));
+        .addAnnotation(SourceGenerator.generatedAnnotation(TransactionalInterceptorHandler.class));
 
     final MethodSpec constructor = MethodSpec.constructorBuilder()//
         .addModifiers(PUBLIC)//
@@ -166,7 +166,7 @@ public class TransactionalInterceptorHandler implements InterceptorHandler {
 
     classBuilder.addMethod(constructor);
 
-    InterceptorProcessor.writeClass(//
+    SourceGenerator.writeClass(//
         processingEnv, //
         DAGGER_JPA_PACKAGE + INTERNAL_PACKAGE, //
         classBuilder.build());
