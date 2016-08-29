@@ -11,15 +11,17 @@
  * and limitations under the License.
  */
 
-package com.github.x3333.dagger.jpa;
+package com.github.x3333.dagger.jpa.internal;
 
 import static javax.lang.model.element.Modifier.FINAL;
 import static javax.lang.model.element.Modifier.PRIVATE;
 import static javax.lang.model.element.Modifier.PUBLIC;
 
 import com.github.x3333.dagger.aop.InterceptorHandler;
-import com.github.x3333.dagger.aop.MethodBind;
-import com.github.x3333.dagger.jpa.impl.JpaServiceImpl;
+import com.github.x3333.dagger.aop.internal.InterceptorProcessor;
+import com.github.x3333.dagger.jpa.JpaService;
+import com.github.x3333.dagger.jpa.Transactional;
+import com.github.x3333.dagger.jpa.TransactionalInterceptor;
 
 import java.io.IOException;
 import java.io.PrintWriter;
@@ -28,7 +30,6 @@ import java.lang.annotation.Annotation;
 import java.util.Map;
 import java.util.Set;
 
-import javax.annotation.Generated;
 import javax.annotation.processing.ProcessingEnvironment;
 import javax.inject.Inject;
 import javax.inject.Singleton;
@@ -44,8 +45,6 @@ import javax.tools.Diagnostic;
 import com.google.auto.common.MoreElements;
 import com.google.auto.service.AutoService;
 import com.google.common.base.MoreObjects;
-import com.google.common.collect.Multimap;
-import com.squareup.javapoet.AnnotationSpec;
 import com.squareup.javapoet.ClassName;
 import com.squareup.javapoet.CodeBlock;
 import com.squareup.javapoet.JavaFile;
@@ -64,7 +63,10 @@ import dagger.Provides;
 @AutoService(InterceptorHandler.class)
 public class TransactionalInterceptorHandler implements InterceptorHandler {
 
-  private static final String DAGGER_JPA_PACKAGE = TransactionalInterceptorHandler.class.getPackage().getName();
+  private static final String DAGGER_JPA_PACKAGE = JpaService.class.getPackage().getName();
+  private static final String INTERNAL_PACKAGE = ".internal";
+
+  private static final String JPA_MODULE_NAME = "JpaModule";
   private static final String TRANSACTIONAL_INTERCEPTOR_IMPL_NAME = "TransactionalInterceptorImpl";
 
   @Override
@@ -131,26 +133,28 @@ public class TransactionalInterceptorHandler implements InterceptorHandler {
   }
 
   @Override
-  public void postProcess(final ProcessingEnvironment processingEnv, final Multimap<TypeElement, MethodBind> bindings) {
+  public void postProcess(final ProcessingEnvironment processingEnv, final Set<TypeElement> processedClasses) {
     generateJpaModule(processingEnv);
-    generateTransactionalInterceptorImpl(processingEnv, bindings);
+    generateTransactionalInterceptorImpl(processingEnv);
   }
 
   private void generateJpaModule(final ProcessingEnvironment processingEnv) {
-    final String className = "JpaModule";
     final TypeName unitNameType = TypeName.get(String.class);
-    final TypeName propertiesType = ParameterizedTypeName.get(ClassName.get(Map.class),
-        WildcardTypeName.subtypeOf(Object.class), WildcardTypeName.subtypeOf(Object.class));
+    final TypeName propertiesType = ParameterizedTypeName.get(//
+        ClassName.get(Map.class), //
+        WildcardTypeName.subtypeOf(Object.class), //
+        WildcardTypeName.subtypeOf(Object.class));
     final TypeName jpaServiceType = TypeName.get(JpaService.class);
+    final ClassName transactionalInterceptorImplType = ClassName.get(//
+        DAGGER_JPA_PACKAGE + INTERNAL_PACKAGE, //
+        TRANSACTIONAL_INTERCEPTOR_IMPL_NAME);
 
-    final TypeSpec.Builder classBuilder = TypeSpec.classBuilder(className) //
+    final TypeSpec.Builder classBuilder = TypeSpec.classBuilder(JPA_MODULE_NAME) //
         .addModifiers(PUBLIC, FINAL)//
         .addJavadoc("This class is the default Dagger module for JPA.\n\n" + "<p>\n"
             + "This has been created in your project so Dagger can generate \n"
             + "Factory classes in your project, freeing us from distributing generated code.\n")//
-        .addAnnotation(AnnotationSpec.builder(Generated.class)//
-            .addMember("value", "$S", TransactionalInterceptorHandler.class.getCanonicalName())//
-            .addMember("comments", "$S", "https://github.com/0x3333/dagger-jpa").build())//
+        .addAnnotation(InterceptorProcessor.generatedAnnotation(TransactionalInterceptorHandler.class))//
         .addAnnotation(Module.class)//
         .addField(unitNameType, "persistenceUnitName", PRIVATE, FINAL)//
         .addField(propertiesType, "persistenceProperties", PRIVATE, FINAL);
@@ -184,9 +188,6 @@ public class TransactionalInterceptorHandler implements InterceptorHandler {
         .addCode("$[return jpaService.get();\n$]", JpaServiceImpl.class)//
         .build();
 
-    // TransactionalInterceptor
-    final ClassName transactionalInterceptorImplType =
-        ClassName.get(DAGGER_JPA_PACKAGE + ".impl", TRANSACTIONAL_INTERCEPTOR_IMPL_NAME);
     final MethodSpec transactionalInterceptorMethod = MethodSpec.methodBuilder("providesTransactionalInterceptor")//
         .addAnnotation(Provides.class)//
         .returns(TypeName.get(TransactionalInterceptor.class))//
@@ -201,22 +202,19 @@ public class TransactionalInterceptorHandler implements InterceptorHandler {
         .addMethod(entityManagerMethod)//
         .addMethod(transactionalInterceptorMethod);
 
-    writeClass(processingEnv, DAGGER_JPA_PACKAGE, className, classBuilder);
+    writeClass(processingEnv, DAGGER_JPA_PACKAGE, JPA_MODULE_NAME, classBuilder);
   }
 
-  private void generateTransactionalInterceptorImpl(final ProcessingEnvironment processingEnv,
-      final Multimap<TypeElement, MethodBind> bindings) {
+  private void generateTransactionalInterceptorImpl(final ProcessingEnvironment processingEnv) {
     final TypeName jpaServiceType = TypeName.get(JpaService.class);
 
     final TypeSpec.Builder classBuilder = TypeSpec.classBuilder(TRANSACTIONAL_INTERCEPTOR_IMPL_NAME) //
-        .superclass(ClassName.get(DAGGER_JPA_PACKAGE + ".impl", "TransactionalInterceptorInternal"))
+        .superclass(ClassName.get(DAGGER_JPA_PACKAGE + INTERNAL_PACKAGE, "TransactionalInterceptorInternal"))
         .addModifiers(PUBLIC, FINAL)//
         .addJavadoc("This class is used as the default 'implementation' for TransactionalInterceptor.\n\n" + "<p>\n"
             + "This has been created in your project so Dagger can generate \n"
             + "Factory classes in your project, freeing us from distributing generated code.\n")//
-        .addAnnotation(AnnotationSpec.builder(Generated.class)//
-            .addMember("value", "$S", TransactionalInterceptorHandler.class.getCanonicalName())//
-            .addMember("comments", "$S", "https://github.com/0x3333/dagger-jpa").build());
+        .addAnnotation(InterceptorProcessor.generatedAnnotation(TransactionalInterceptorHandler.class));
 
     final MethodSpec constructor = MethodSpec.constructorBuilder()//
         .addModifiers(PUBLIC)//
@@ -227,7 +225,7 @@ public class TransactionalInterceptorHandler implements InterceptorHandler {
 
     classBuilder.addMethod(constructor);
 
-    writeClass(processingEnv, DAGGER_JPA_PACKAGE + ".impl", TRANSACTIONAL_INTERCEPTOR_IMPL_NAME, classBuilder);
+    writeClass(processingEnv, DAGGER_JPA_PACKAGE + INTERNAL_PACKAGE, TRANSACTIONAL_INTERCEPTOR_IMPL_NAME, classBuilder);
   }
 
   private void writeClass(final ProcessingEnvironment processingEnv, final String packageName, final String moduleName,
@@ -249,7 +247,9 @@ public class TransactionalInterceptorHandler implements InterceptorHandler {
 
   @Override
   public String toString() {
-    return MoreObjects.toStringHelper(this).add("annotation", annotation()).toString();
+    return MoreObjects.toStringHelper(this)//
+        .add("methodInterceptor", methodInterceptorClass())//
+        .add("annotation", annotation()).toString();
   }
 
 }

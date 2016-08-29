@@ -11,7 +11,7 @@
  * and limitations under the License.
  */
 
-package com.github.x3333.dagger.jpa.impl;
+package com.github.x3333.dagger.jpa.internal;
 
 import static java.lang.Boolean.TRUE;
 
