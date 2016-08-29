@@ -68,7 +68,7 @@ public final class JpaServiceImpl implements JpaService {
   }
 
   @Override
-  public synchronized void stop() {
+  public void stop() {
     logger.trace("Stopping");
     synchronized (emFactoryLock) {
       if (emFactory == null) {
