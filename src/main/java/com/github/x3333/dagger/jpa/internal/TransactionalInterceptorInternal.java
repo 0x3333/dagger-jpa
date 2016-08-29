@@ -23,6 +23,9 @@ import com.github.x3333.dagger.jpa.TransactionalInterceptor;
 import javax.persistence.EntityManager;
 import javax.persistence.EntityTransaction;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 /**
  * Make a intercepted method transactional using a {@link JpaService}.
  * 
@@ -33,6 +36,8 @@ import javax.persistence.EntityTransaction;
  * @author Tercio Gaudencio Filho (terciofilho [at] gmail.com)
  */
 class TransactionalInterceptorInternal implements TransactionalInterceptor {
+
+  private final Logger logger = LoggerFactory.getLogger(TransactionalInterceptorInternal.class);
 
   private final JpaService service;
   private final ThreadLocal<Boolean> shouldClose = new ThreadLocal<Boolean>();
@@ -58,19 +63,24 @@ class TransactionalInterceptorInternal implements TransactionalInterceptor {
 
     // If there is an active transaction, join.
     if (transaction.isActive()) {
+      logger.trace("Active transaction in place");
       return (T) invocation.proceed();
     }
 
     transaction.begin();
+    logger.trace("Transaction begun");
 
     final T result;
     try {
+      logger.trace("Invoking");
       result = (T) invocation.proceed();
     } catch (final Exception e) {
       final boolean rollback = doRollback(transaction, e, invocation.annotation(Transactional.class));
       if (rollback) {
+        logger.trace("Reverting", e);
         transaction.rollback();
       } else {
+        logger.trace("Committing", e);
         transaction.commit();
       }
       throw e; // Continue exception flow
@@ -83,6 +93,7 @@ class TransactionalInterceptorInternal implements TransactionalInterceptor {
     }
 
     try {
+      logger.trace("Committing");
       transaction.commit();
     } finally {
       // Close the EM if we begin the work
