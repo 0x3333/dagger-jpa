@@ -19,7 +19,6 @@ import com.github.x3333.dagger.jpa.JpaService;
 
 import java.util.Map;
 
-import javax.inject.Inject;
 import javax.persistence.EntityManager;
 import javax.persistence.EntityManagerFactory;
 import javax.persistence.Persistence;
@@ -34,64 +33,62 @@ import com.google.common.base.Preconditions;
  * 
  * @author Tercio Gaudencio Filho (terciofilho [at] gmail.com)
  */
-public class JpaServiceImpl implements JpaService {
+public final class JpaServiceImpl implements JpaService {
 
   private final Logger logger = LoggerFactory.getLogger(JpaServiceImpl.class);
 
-  protected boolean started = false;
+  private final String persistenceUnitName;
+  private final Map<?, ?> persistenceProperties;
 
-  protected final String persistenceUnitName;
-  protected final Map<?, ?> persistenceProperties;
+  private final Object emFactoryLock = new Object();
+  private volatile EntityManagerFactory emFactory;
+  private final ThreadLocal<EntityManager> entityManager = new ThreadLocal<EntityManager>();
 
-  protected volatile EntityManagerFactory emFactory;
-  protected final ThreadLocal<EntityManager> entityManager = new ThreadLocal<EntityManager>();
-
-  @Inject
   public JpaServiceImpl(final String persistenceUnitName, final Map<?, ?> persistenceProperties) {
+    logger.trace("Creating");
     this.persistenceUnitName = persistenceUnitName;
     this.persistenceProperties = persistenceProperties;
   }
 
   @Override
   public void start() {
-    logger.debug("Starting");
-    if (started) {
-      return;
-    }
+    logger.trace("Starting");
+    synchronized (emFactoryLock) {
+      if (emFactory != null) {
+        return;
+      }
 
-    if (null != persistenceProperties) {
       emFactory = Persistence.createEntityManagerFactory(persistenceUnitName, persistenceProperties);
-    } else {
-      emFactory = Persistence.createEntityManagerFactory(persistenceUnitName);
     }
-
-    started = true;
   }
 
   @Override
   public boolean isStarted() {
-    return started;
+    return emFactory != null;
   }
 
   @Override
-  public void stop() {
-    logger.debug("Stopping");
-    if (!started) {
-      return;
-    }
+  public synchronized void stop() {
+    logger.trace("Stopping");
+    synchronized (emFactoryLock) {
+      if (emFactory == null) {
+        return;
+      }
 
-    checkState(emFactory.isOpen(), "Persistence service is already shut down!");
+      // Should never occurs!
+      checkState(emFactory.isOpen(), "Persistence service is already shut down!");
 
-    try {
-      emFactory.close();
-    } finally {
-      started = false;
+      try {
+        emFactory.close();
+      } finally {
+        emFactory = null;
+      }
     }
   }
 
   @Override
   public EntityManager get() {
-    logger.debug("Get EntityManager");
+    logger.trace("Get EntityManager");
     Preconditions.checkState(hasBegun(), "EntityManager requested, but work hasn't been initiated. "
         + "You should call JpaService.being() and JpaService.end(), or use Transactional method interceptor.");
 
@@ -100,7 +97,7 @@ public class JpaServiceImpl implements JpaService {
 
   @Override
   public void begin() {
-    logger.debug("Begin work");
+    logger.trace("Begin work");
     if (entityManager.get() != null) {
       return;
     }
@@ -110,7 +107,7 @@ public class JpaServiceImpl implements JpaService {
 
   @Override
   public void end() {
-    logger.debug("End work");
+    logger.trace("End work");
     final EntityManager em = entityManager.get();
     if (em == null) {
       return;

@@ -30,6 +30,7 @@ import java.util.Set;
 
 import javax.annotation.Generated;
 import javax.annotation.processing.ProcessingEnvironment;
+import javax.inject.Inject;
 import javax.inject.Singleton;
 import javax.lang.model.element.Element;
 import javax.lang.model.element.ElementKind;
@@ -62,6 +63,9 @@ import dagger.Provides;
  */
 @AutoService(InterceptorHandler.class)
 public class TransactionalInterceptorHandler implements InterceptorHandler {
+
+  private static final String DAGGER_JPA_PACKAGE = TransactionalInterceptorHandler.class.getPackage().getName();
+  private static final String TRANSACTIONAL_INTERCEPTOR_IMPL_NAME = "TransactionalInterceptorImpl";
 
   @Override
   public Class<? extends Annotation> annotation() {
@@ -128,15 +132,22 @@ public class TransactionalInterceptorHandler implements InterceptorHandler {
 
   @Override
   public void postProcess(final ProcessingEnvironment processingEnv, final Multimap<TypeElement, MethodBind> bindings) {
-    final String moduleName = "JpaModule";
+    generateJpaModule(processingEnv);
+    generateTransactionalInterceptorImpl(processingEnv, bindings);
+  }
 
+  private void generateJpaModule(final ProcessingEnvironment processingEnv) {
+    final String className = "JpaModule";
     final TypeName unitNameType = TypeName.get(String.class);
     final TypeName propertiesType = ParameterizedTypeName.get(ClassName.get(Map.class),
         WildcardTypeName.subtypeOf(Object.class), WildcardTypeName.subtypeOf(Object.class));
     final TypeName jpaServiceType = TypeName.get(JpaService.class);
 
-    final TypeSpec.Builder classBuilder = TypeSpec.classBuilder(moduleName) //
+    final TypeSpec.Builder classBuilder = TypeSpec.classBuilder(className) //
         .addModifiers(PUBLIC, FINAL)//
+        .addJavadoc("This class is the default Dagger module for JPA.\n\n" + "<p>\n"
+            + "This has been created in your project so Dagger can generate \n"
+            + "Factory classes in your project, freeing us from distributing generated code.\n")//
         .addAnnotation(AnnotationSpec.builder(Generated.class)//
             .addMember("value", "$S", TransactionalInterceptorHandler.class.getCanonicalName())//
             .addMember("comments", "$S", "https://github.com/0x3333/dagger-jpa").build())//
@@ -173,14 +184,56 @@ public class TransactionalInterceptorHandler implements InterceptorHandler {
         .addCode("$[return jpaService.get();\n$]", JpaServiceImpl.class)//
         .build();
 
+    // TransactionalInterceptor
+    final ClassName transactionalInterceptorImplType =
+        ClassName.get(DAGGER_JPA_PACKAGE + ".impl", TRANSACTIONAL_INTERCEPTOR_IMPL_NAME);
+    final MethodSpec transactionalInterceptorMethod = MethodSpec.methodBuilder("providesTransactionalInterceptor")//
+        .addAnnotation(Provides.class)//
+        .returns(TypeName.get(TransactionalInterceptor.class))//
+        .addParameter(jpaServiceType, "jpaService", FINAL)//
+        .addCode("$[return new $T(jpaService);\n$]", transactionalInterceptorImplType)//
+        .build();
+
     classBuilder//
         .addMethod(constructor1)//
         .addMethod(constructor2)//
         .addMethod(jpaServiceMethod)//
-        .addMethod(entityManagerMethod);
+        .addMethod(entityManagerMethod)//
+        .addMethod(transactionalInterceptorMethod);
 
+    writeClass(processingEnv, DAGGER_JPA_PACKAGE, className, classBuilder);
+  }
+
+  private void generateTransactionalInterceptorImpl(final ProcessingEnvironment processingEnv,
+      final Multimap<TypeElement, MethodBind> bindings) {
+    final TypeName jpaServiceType = TypeName.get(JpaService.class);
+
+    final TypeSpec.Builder classBuilder = TypeSpec.classBuilder(TRANSACTIONAL_INTERCEPTOR_IMPL_NAME) //
+        .superclass(ClassName.get(DAGGER_JPA_PACKAGE + ".impl", "TransactionalInterceptorInternal"))
+        .addModifiers(PUBLIC, FINAL)//
+        .addJavadoc("This class is used as the default 'implementation' for TransactionalInterceptor.\n\n" + "<p>\n"
+            + "This has been created in your project so Dagger can generate \n"
+            + "Factory classes in your project, freeing us from distributing generated code.\n")//
+        .addAnnotation(AnnotationSpec.builder(Generated.class)//
+            .addMember("value", "$S", TransactionalInterceptorHandler.class.getCanonicalName())//
+            .addMember("comments", "$S", "https://github.com/0x3333/dagger-jpa").build());
+
+    final MethodSpec constructor = MethodSpec.constructorBuilder()//
+        .addModifiers(PUBLIC)//
+        .addAnnotation(Inject.class)//
+        .addParameter(jpaServiceType, "jpaService", FINAL)//
+        .addCode("$[super(jpaService);\n$]")//
+        .build();
+
+    classBuilder.addMethod(constructor);
+
+    writeClass(processingEnv, DAGGER_JPA_PACKAGE + ".impl", TRANSACTIONAL_INTERCEPTOR_IMPL_NAME, classBuilder);
+  }
+
+  private void writeClass(final ProcessingEnvironment processingEnv, final String packageName, final String moduleName,
+      final TypeSpec.Builder classBuilder) {
     try {
-      JavaFile.builder("com.github.x3333.dagger.jpa", classBuilder.build()).build().writeTo(processingEnv.getFiler());
+      JavaFile.builder(packageName, classBuilder.build()).build().writeTo(processingEnv.getFiler());
     } catch (final IOException ioe) {
       final StringWriter sw = new StringWriter();
       try (final PrintWriter pw = new PrintWriter(sw);) {

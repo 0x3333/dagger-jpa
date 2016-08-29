@@ -47,8 +47,8 @@ public interface JpaService extends Provider<EntityManager> {
   boolean isStarted();
 
   /**
-   * Stops the underlying persistence engine. For instance, it closes the {@code EntityManagerFactory}. If already stopped or not yet
-   * started, calling this method does nothing.
+   * Stops the underlying persistence engine. For instance, it closes the {@code EntityManagerFactory}. If already stopped or not started
+   * yet, calling this method does nothing.
    */
   void stop();
 
@@ -59,12 +59,12 @@ public interface JpaService extends Provider<EntityManager> {
   EntityManager get();
 
   /**
-   * Begin EntityManager work.
+   * Begin EntityManager work. If already called, calling this method does nothing.
    */
   void begin();
 
   /**
-   * End EntityManager work.
+   * End EntityManager work. If already called, calling this method does nothing.
    */
   void end();
 
