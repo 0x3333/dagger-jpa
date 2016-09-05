@@ -11,7 +11,7 @@
  * and limitations under the License.
  */
 
-package com.github.x3333.dagger.jpa.internal;
+package com.github.x3333.dagger.jpa.impl;
 
 import static java.lang.Boolean.TRUE;
 
@@ -29,22 +29,18 @@ import org.slf4j.LoggerFactory;
 /**
  * Make a intercepted method transactional using a {@link JpaService}.
  * 
- * <p>
- * This implementation is hidden. This is necessary so we can generate a simple class(TransactionalInterceptorImpl) in the destination
- * project that uses this library. This way we don't need to distribute Dagger generated classes.
- * 
  * @author Tercio Gaudencio Filho (terciofilho [at] gmail.com)
  */
-class TransactionalInterceptorInternal implements TransactionalInterceptor {
+public class TransactionalInterceptorImpl implements TransactionalInterceptor {
 
-  private final Logger logger = LoggerFactory.getLogger(TransactionalInterceptorInternal.class);
+  private final Logger logger = LoggerFactory.getLogger(TransactionalInterceptorImpl.class);
 
   private final JpaService service;
-  private final ThreadLocal<Boolean> shouldClose = new ThreadLocal<Boolean>();
+  private final ThreadLocal<Boolean> shouldClose = new ThreadLocal<>();
 
   //
 
-  public TransactionalInterceptorInternal(final JpaService service) {
+  public TransactionalInterceptorImpl(final JpaService service) {
     this.service = service;
   }
 
