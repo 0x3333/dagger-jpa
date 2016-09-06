@@ -22,7 +22,6 @@ import com.github.x3333.dagger.aop.Sources;
 import com.github.x3333.dagger.jpa.JpaService;
 import com.github.x3333.dagger.jpa.Transactional;
 import com.github.x3333.dagger.jpa.TransactionalInterceptor;
-import com.github.x3333.dagger.jpa.TransactionalInterceptor;
 import com.github.x3333.dagger.jpa.impl.JpaServiceImpl;
 
 import java.lang.annotation.Annotation;
