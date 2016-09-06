@@ -1,98 +1,103 @@
 # Dagger2 JPA
 
-### ***This is a work in progress. API is not defined yet.*** ###
+### ***This is a work in progress. API may change***
 
-Usage
------
+Lightweight JPA transaction management library, based on the [dagger-aop](https://github.com/0x3333/dagger-aop) project.
 
-dagger-jpa generates a class with a `Transactional_` prefix, next to your class and that extends it,
-whose some method(s) are annotated with @Transactional. This class has a method
-interceptor which will manage JPA transactions, similar as [Guice Persist extension](https://github.com/google/guice/wiki/Transactions)
+## What is it?
 
-The `TransactionalInterceptor` will delegate to the appropriate method wrapping it with the logic behind a transaction management. [See here - `TransactionalInterceptor`](https://github.com/0x3333/dagger-jpa/blob/master/src/main/java/com/github/x3333/dagger/jpa/TransactionalInterceptor.java)
+***dagger-jpa*** is a library that  provides abstractions for working with JPA transactions in a Dagger 2 application. It works in all kind of aplication, Java desktop, server application, Servlet environment, etc.
 
-dagger-jpa processor is triggered by `@Transactional` annotations, so you need to put dagger-jpa in your processor path to get it to work, and bind your transactional classes in the module to the `Transactional_*` version of your classes. The transactional classes adds a dependecy to the already present dependencies. You have to provide a `TransactionalInterceptor` as a dependency to the newly created class.
+As it is an extension to [dagger-aop](https://github.com/0x3333/dagger-aop), it will generate code at compile time using an annotation-based API.
 
-Classes that have `@Transactional` methods must be abstract, non-final and have only one constructor or no constructor.
+This project has been inspired by [Guice Persist](https://github.com/google/guice/wiki/GuicePersist).
 
-You must start the `JpaService` before using it. You must provide the `JPA Unit Name` to the `JpaModule` module.
+Classes that have `@Transactional` methods must be abstract and have only one constructor or no constructor.
 
-If your class have `@Inject` fields, but no constructor with `@Inject`, means to Dagger that it can inject those fields when requested but it will not create new instances of this class. This behavour is changed when using dagger-jpa, because it creates a constructor annotated with `@Inject` if none is present. This is not an issue to most people, but something to consider in unusual use cases.
+## Usage
 
-This is a initial work, I'll split into projects to get things a little more concise.
+If you are using Maven, add a dependency:
 
-More docs later as I finish things up.
+```xml
+  <!-- Core -->
+  <dependency>
+      <groupId>com.github.0x3333.dagger.jpa</groupId>
+      <artifactId>dagger-jpa-core</artifactId>
+      <version>1.0-SNAPSHOT</version>
+  </dependency>
+  <!-- This is only necessary on compile time, optional -->
+  <dependency>
+      <groupId>com.github.0x3333.dagger.jpa</groupId>
+      <artifactId>dagger-jpa-compiler</artifactId>
+      <version>1.0-SNAPSHOT</version>
+      <optional>true</optional>
+  </dependency>
+```
 
-Example
--------
+Despite adding dagger-jpa as a dependency, you need to include the `JpaModule` and `InterceptorModule` in your Dagger Component/Module and annotated your methods using `@Transactional` annotation.
+
+Also you need to start the `JpaService` before any transactional method is called.
 
 ```java
-YourComponent component = DaggerYourComponent.builder().yourModule(new YourModule()).jpaModule(new JpaModule("jpa-unit-name")).build();
+// Adding JpaModule and InterceptorModule
+@Component(modules = { MyModule.class, JpaModule.class, InterceptorModule.class })
+public interface MyComponent {
+
+	DbWork dbWork();
+	
+	JpaService jpaService();
+
+}
+```
+
+This is a normal module where an interface is binded to an implementation:
+
+```java
+@Module
+public abstract class MyModule {
+
+	@Binds
+	abstract DbWork providesTransac(DbWorkImpl impl);
+	
+}
+```
+
+In your transactional classes, annotated all methods that need to be transactional with `@Transactional`:
+
+```java
+// Class must be ABSTRACT
+public abstract class DbWorkImpl implements DbWork {
+
+  private final Provider<EntityManager> emProvider;
+
+  // Inject a Provider when the instance is Singleton or used outside the scope.
+  public DbWorkImpl(Provider<EntityManager> emProvider) {
+    this.emProvider = emProvider;
+  }
+
+  @Override
+  @Transactional
+  public void doSomeWork() {
+    // You can get an EntityManager only inside a Transacional method.
+    /// emProvider.get().createQuery(....);
+  }
+
+}
+```
+
+To create your Component you need to install `JpaModule` which will require the JPA Unit name.
+
+```java
+MyComponent component = DaggerMyComponent.builder().jpaModule(new JpaModule("jpa-unit-name")).build();
 
 component.jpaService().start();
 ```
 
-```java
-// You MUST add JpaModule to your module list
-@Component(modules = { JpaModule.class, YourModule.class })
-@Singleton
-public interface YourComponent {
+This is all. The `InterceptorModule` will bind `DbWorkImpl` to the generated `Interceptor_DbWorkImpl`, which is a subclass of `DbWorkImpl`. Everytime a `DbWork` is requested, a `Interceptor_DbWorkImpl` will be returned. This subclass will manage the transaction for you.
 
-  YourApp yourApp();
-  
-  JpaService jpaService();
+## Cavets
 
-}
-```
-
-```java
-@Module
-public class YourModule {
-
-  @Provides
-  public DbWork providesDbWork(SomeDep someDep, Lazy<EntityManager> em, TransactionalInterceptor interceptor) {
-    // Note the 'TransactionalInterceptor interceptor' dependency
-    return new Transactional_DbWork(someDep, em, interceptor);
-  }
-
-}
-```
-
-```java
-package com.github.x3333.dagger.jpa.tester;
-
-import javax.inject.Inject;
-import javax.inject.Provider;
-
-import javax.persistence.EntityManager;
-
-import com.github.x3333.dagger.jpa.Transactional;
-
-
-public abstract class DbWork {
-
-  // Should not be injected directly(Or Provider ou Lazy), as Dagger will try to inject before EntityManagerFactory has been created
-  private Provider<EntityManager> emProvider;
-
-  @Inject
-  public Transac(SomeDep someDep, Provider<EntityManager> emProvider) {
-    this.someDep = someDep;
-    this.emProvider = emProvider;
-  }
-
-  @Transactional
-  protected void someWork() {
-    // Do some DB work with 'em', 'em' will be binded to the local thread.
-    emProvider.get().isOpen();
-  }
-
-  @Transactional
-  protected String someWork2() {
-    return "Hello Dagger-JPA!";
-  }
-
-}
-```
+If your class have `@Inject` fields, but no constructor with `@Inject`, means to Dagger that it can inject those fields when requested but it will not create new instances of this class. This behavour is changed when using `dagger-jpa`, because it creates a constructor annotated with `@Inject` if none is present. Thus, the instance will be created by Dagger and also members injected. This is not an issue to most people, but something to consider in unusual use cases.
 
 License
 -------
