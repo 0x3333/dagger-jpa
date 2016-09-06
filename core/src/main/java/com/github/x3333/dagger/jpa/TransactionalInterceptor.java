@@ -13,13 +13,103 @@
 
 package com.github.x3333.dagger.jpa;
 
+import static java.lang.Boolean.TRUE;
+
 import com.github.x3333.dagger.aop.MethodInterceptor;
+import com.github.x3333.dagger.aop.MethodInvocation;
+
+import javax.persistence.EntityManager;
+import javax.persistence.EntityTransaction;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
- * Marker interface for the TransactionalInterceptorImpl.
+ * Make a intercepted method transactional using a {@link JpaService}.
  * 
  * @author Tercio Gaudencio Filho (terciofilho [at] gmail.com)
  */
-public interface TransactionalInterceptor extends MethodInterceptor {
+public final class TransactionalInterceptor implements MethodInterceptor {
+
+  private final Logger logger = LoggerFactory.getLogger(TransactionalInterceptor.class);
+
+  private final JpaService service;
+  private final ThreadLocal<Boolean> shouldClose = new ThreadLocal<>();
+
+  //
+
+  public TransactionalInterceptor(final JpaService service) {
+    this.service = service;
+  }
+
+  //
+
+  @Override
+  @SuppressWarnings("unchecked")
+  public <T> T invoke(final MethodInvocation invocation) throws Throwable {
+    if (!service.hasBegun()) {
+      service.begin();
+      shouldClose.set(true);
+    }
+
+    final EntityManager em = service.get();
+    final EntityTransaction transaction = em.getTransaction();
+
+    // If there is an active transaction, join.
+    if (transaction.isActive()) {
+      logger.trace("Active transaction in place");
+      return (T) invocation.proceed();
+    }
+
+    transaction.begin();
+    logger.trace("Transaction begun");
+
+    final T result;
+    try {
+      logger.trace("Invoking");
+      result = (T) invocation.proceed();
+    } catch (final Exception e) {
+      final boolean rollback = doRollback(transaction, e, invocation.annotation(Transactional.class));
+      if (rollback) {
+        logger.trace("Reverting", e);
+        transaction.rollback();
+      } else {
+        logger.trace("Committing", e);
+        transaction.commit();
+      }
+      throw e; // Continue exception flow
+    } finally {
+      // Close the EM in case we started work and transaction is not active anymore.
+      if (TRUE.equals(shouldClose.get()) && !transaction.isActive()) {
+        shouldClose.remove();
+        service.end();
+      }
+    }
+
+    try {
+      logger.trace("Committing");
+      transaction.commit();
+    } finally {
+      // Close the EM if we begin the work
+      if (TRUE.equals(shouldClose.get())) {
+        shouldClose.remove();
+        service.end();
+      }
+    }
+
+    return result;
+  }
+
+  private boolean doRollback(//
+      final EntityTransaction transaction, //
+      final Exception e, //
+      final Transactional transactional) {
+    for (final Class<? extends Exception> rollbackException : transactional.rollbackOn()) {
+      if (rollbackException.isInstance(e)) {
+        return true;
+      }
+    }
+    return false;
+  }
 
 }

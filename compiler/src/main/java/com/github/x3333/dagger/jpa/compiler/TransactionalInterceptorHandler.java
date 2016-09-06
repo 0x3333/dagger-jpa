@@ -22,8 +22,8 @@ import com.github.x3333.dagger.aop.Sources;
 import com.github.x3333.dagger.jpa.JpaService;
 import com.github.x3333.dagger.jpa.Transactional;
 import com.github.x3333.dagger.jpa.TransactionalInterceptor;
+import com.github.x3333.dagger.jpa.TransactionalInterceptor;
 import com.github.x3333.dagger.jpa.impl.JpaServiceImpl;
-import com.github.x3333.dagger.jpa.impl.TransactionalInterceptorImpl;
 
 import java.lang.annotation.Annotation;
 import java.util.Map;
@@ -79,7 +79,7 @@ public class TransactionalInterceptorHandler implements InterceptorHandler {
         WildcardTypeName.subtypeOf(Object.class), //
         WildcardTypeName.subtypeOf(Object.class));
     final TypeName jpaServiceType = TypeName.get(JpaService.class);
-    final ClassName transactionalInterceptorImplType = ClassName.get(TransactionalInterceptorImpl.class);
+    final ClassName transactionalInterceptorImplType = ClassName.get(TransactionalInterceptor.class);
 
     final TypeSpec.Builder classBuilder = TypeSpec.classBuilder(JPA_MODULE_NAME) //
         .addModifiers(PUBLIC, FINAL)//
