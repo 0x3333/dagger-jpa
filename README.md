@@ -34,7 +34,7 @@ If you are using Maven, add a dependency:
   </dependency>
 ```
 
-Despite adding dagger-jpa as a dependency, you need to include the `JpaModule` and `InterceptorModule` in your Dagger Component/Module and annotated your methods using `@Transactional` annotation.
+Despite adding dagger-jpa as a dependency, you need to include the `JpaModule` and `InterceptorModule` in your Dagger Component/Module and annotated your methods using `@Transactional` annotation. You must bind the JPA Unit Name and the JPA Properties in some of your modules.
 
 Also you need to start the `JpaService` before any transactional method is called.
 
@@ -50,7 +50,7 @@ public interface MyComponent {
 }
 ```
 
-This is a normal module where an interface is binded to an implementation:
+This is a normal module where an interface is binded to an implementation, also we bind the JPA Unit Name and JPA Properties:
 
 ```java
 @Module
@@ -58,7 +58,22 @@ public abstract class MyModule {
 
 	@Binds
 	abstract DbWork providesTransac(DbWorkImpl impl);
-	
+
+	// Here we are bind the Unit Name 
+	@Provides
+	@Named("jpa.unitname")
+	static String providesJpaUnitName() {
+		return "dagger-jpa";
+	}
+
+	// Here we are bind the JPA Properties, in this case, there is none, we return null
+	@Provides
+	@Nullable
+	@Named("jpa.properties")
+	static Map<?, ?> providesJpaProperties() {
+		return null;
+	}
+
 }
 ```
 
@@ -68,18 +83,17 @@ In your transactional classes, annotated all methods that need to be transaction
 // Class must be ABSTRACT
 public abstract class DbWorkImpl implements DbWork {
 
-  private final Provider<EntityManager> emProvider;
+  private final JpaService jpaService;
 
-  // Inject a Provider when the instance is Singleton or used outside the scope.
-  public DbWorkImpl(Provider<EntityManager> emProvider) {
-    this.emProvider = emProvider;
+  public DbWorkImpl(JpaService jpaService) {
+    this.jpaService = jpaService;
   }
 
   @Override
   @Transactional
   public void doSomeWork() {
-    // You can get an EntityManager only inside a Transacional method.
-    /// emProvider.get().createQuery(....);
+    // You can get an EntityManager from JpaService
+    // jpaService.getEntityManager().createQuery(....);
   }
 
 }
@@ -88,7 +102,7 @@ public abstract class DbWorkImpl implements DbWork {
 To create your Component you need to install `JpaModule` which will require the JPA Unit name.
 
 ```java
-MyComponent component = DaggerMyComponent.builder().jpaModule(new JpaModule("jpa-unit-name")).build();
+MyComponent component = DaggerMyComponent.builder().build();
 
 component.jpaService().start();
 ```
