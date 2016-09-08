@@ -13,12 +13,17 @@
 
 package com.github.x3333.dagger.jpa.tester;
 
+import java.util.Map;
+
+import javax.annotation.Nullable;
+import javax.inject.Named;
 import javax.inject.Singleton;
 
 import com.github.x3333.dagger.aop.InterceptorModule;
 
 import dagger.Binds;
 import dagger.Module;
+import dagger.Provides;
 
 @Module(includes = { InterceptorModule.class })
 public abstract class TestModule {
@@ -26,5 +31,18 @@ public abstract class TestModule {
 	@Binds
 	@Singleton
 	abstract TransactionalInterface providesTransac(TransactionalClass impl);
+
+	@Provides
+	@Named("jpa.unitname")
+	static String providesJpaUnitName() {
+		return "dagger-jpa";
+	}
+
+	@Provides
+	@Nullable
+	@Named("jpa.properties")
+	static Map<?, ?> providesJpaProperties() {
+		return null;
+	}
 
 }

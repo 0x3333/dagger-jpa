@@ -18,6 +18,7 @@ import static java.lang.Boolean.TRUE;
 import com.github.x3333.dagger.aop.MethodInterceptor;
 import com.github.x3333.dagger.aop.MethodInvocation;
 
+import javax.inject.Inject;
 import javax.persistence.EntityManager;
 import javax.persistence.EntityTransaction;
 
@@ -38,6 +39,7 @@ public final class TransactionalInterceptor implements MethodInterceptor {
 
   //
 
+  @Inject
   public TransactionalInterceptor(final JpaService service) {
     this.service = service;
   }

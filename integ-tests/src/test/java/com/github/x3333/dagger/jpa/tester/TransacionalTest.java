@@ -34,7 +34,8 @@ public class TransacionalTest {
 			e.printStackTrace();
 		}
 
-		TestComponent component = DaggerTestComponent.builder().jpaModule(new JpaModule("dagger-jpa")).build();
+		
+		TestComponent component = DaggerTestComponent.builder().build();
 
 		jpaService = component.jpaService();
 		jpaService.start();

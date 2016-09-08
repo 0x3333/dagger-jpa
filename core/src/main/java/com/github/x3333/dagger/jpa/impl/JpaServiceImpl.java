@@ -19,6 +19,10 @@ import com.github.x3333.dagger.jpa.JpaService;
 
 import java.util.Map;
 
+import javax.annotation.Nullable;
+import javax.inject.Inject;
+import javax.inject.Named;
+import javax.inject.Singleton;
 import javax.persistence.EntityManager;
 import javax.persistence.EntityManagerFactory;
 import javax.persistence.Persistence;
@@ -31,6 +35,7 @@ import org.slf4j.LoggerFactory;
  * 
  * @author Tercio Gaudencio Filho (terciofilho [at] gmail.com)
  */
+@Singleton
 public final class JpaServiceImpl implements JpaService {
 
   private final Logger logger = LoggerFactory.getLogger(JpaServiceImpl.class);
@@ -42,7 +47,10 @@ public final class JpaServiceImpl implements JpaService {
   private volatile EntityManagerFactory emFactory;
   private final ThreadLocal<EntityManager> entityManager = new ThreadLocal<>();
 
-  public JpaServiceImpl(final String persistenceUnitName, final Map<?, ?> persistenceProperties) {
+  @Inject
+  public JpaServiceImpl(//
+      @Named("jpa.unitname") final String persistenceUnitName,
+      @Nullable @Named("jpa.properties") final Map<?, ?> persistenceProperties) {
     logger.trace("Creating");
     this.persistenceUnitName = persistenceUnitName;
     this.persistenceProperties = persistenceProperties;
