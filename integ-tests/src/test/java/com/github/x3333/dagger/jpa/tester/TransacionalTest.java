@@ -55,7 +55,7 @@ public class TransacionalTest {
 
 		jpaService.begin();
 		try {
-			EntityManager em = jpaService.get();
+			EntityManager em = jpaService.getEntityManager();
 			TypedQuery<SomeEntity> query = em.createQuery("FROM SomeEntity WHERE id = :id", SomeEntity.class);
 			query.setParameter("id", id);
 			SomeEntity entity = query.getSingleResult();
@@ -82,7 +82,7 @@ public class TransacionalTest {
 
 		jpaService.begin();
 		try {
-			EntityManager em = jpaService.get();
+			EntityManager em = jpaService.getEntityManager();
 			TypedQuery<Long> query = em.createQuery("SELECT COUNT(e.id) FROM SomeEntity e", Long.class);
 			Long count = query.getSingleResult();
 			assertEquals(count, (Long) 1l);
@@ -108,7 +108,7 @@ public class TransacionalTest {
 
 		jpaService.begin();
 		try {
-			EntityManager em = jpaService.get();
+			EntityManager em = jpaService.getEntityManager();
 			TypedQuery<Long> query = em.createQuery("SELECT COUNT(e.id) FROM SomeEntity e", Long.class);
 			Long count = query.getSingleResult();
 			assertEquals(count, (Long) 0l);
@@ -125,7 +125,7 @@ public class TransacionalTest {
 	 */
 	private void cleanup() {
 		jpaService.begin();
-		EntityManager em = jpaService.get();
+		EntityManager em = jpaService.getEntityManager();
 		em.getTransaction().begin();
 		Query query = em.createQuery("DELETE FROM SomeEntity");
 		query.executeUpdate();

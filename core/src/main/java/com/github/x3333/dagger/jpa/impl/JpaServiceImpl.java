@@ -93,7 +93,7 @@ public final class JpaServiceImpl implements JpaService {
   }
 
   @Override
-  public EntityManager get() {
+  public EntityManager getEntityManager() {
     logger.trace("Get EntityManager");
     checkHasStarted();
 

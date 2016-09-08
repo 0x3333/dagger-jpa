@@ -15,12 +15,13 @@ package com.github.x3333.dagger.jpa.tester;
 
 import javax.inject.Singleton;
 
+import com.github.x3333.dagger.aop.InterceptorModule;
 import com.github.x3333.dagger.jpa.JpaModule;
 import com.github.x3333.dagger.jpa.JpaService;
 
 import dagger.Component;
 
-@Component(modules = { TestModule.class, JpaModule.class })
+@Component(modules = { TestModule.class, InterceptorModule.class, JpaModule.class })
 @Singleton
 public interface TestComponent {
 

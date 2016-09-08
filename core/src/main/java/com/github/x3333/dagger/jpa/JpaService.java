@@ -13,7 +13,6 @@
 
 package com.github.x3333.dagger.jpa;
 
-import javax.inject.Provider;
 import javax.persistence.EntityManager;
 
 /**
@@ -30,7 +29,7 @@ import javax.persistence.EntityManager;
  * 
  * @author Tercio Gaudencio Filho (terciofilho [at] gmail.com)
  */
-public interface JpaService extends Provider<EntityManager> {
+public interface JpaService {
 
   /**
    * Starts the underlying persistence engine and makes JpaService ready for use. For instance, it creates an EntityManagerFactory and may
@@ -55,8 +54,7 @@ public interface JpaService extends Provider<EntityManager> {
   /**
    * Provides an EntityManager instance.
    */
-  @Override
-  EntityManager get();
+  EntityManager getEntityManager();
 
   /**
    * Begin EntityManager work. If already called, calling this method does nothing.

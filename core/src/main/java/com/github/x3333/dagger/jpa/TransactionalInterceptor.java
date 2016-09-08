@@ -54,7 +54,7 @@ public final class TransactionalInterceptor implements MethodInterceptor {
       shouldClose.set(true);
     }
 
-    final EntityManager em = service.get();
+    final EntityManager em = service.getEntityManager();
     final EntityTransaction transaction = em.getTransaction();
 
     // If there is an active transaction, join.

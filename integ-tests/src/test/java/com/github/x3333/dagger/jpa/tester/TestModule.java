@@ -25,7 +25,7 @@ import dagger.Binds;
 import dagger.Module;
 import dagger.Provides;
 
-@Module(includes = { InterceptorModule.class })
+@Module
 public abstract class TestModule {
 
 	@Binds

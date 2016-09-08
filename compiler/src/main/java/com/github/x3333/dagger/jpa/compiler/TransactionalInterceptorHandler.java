@@ -94,7 +94,7 @@ public class TransactionalInterceptorHandler implements InterceptorHandler {
         .addAnnotation(Provides.class)//
         .returns(ClassName.get("javax.persistence", "EntityManager"))//
         .addParameter(jpaServiceType, "jpaService", FINAL)//
-        .addCode("$[return jpaService.get();\n$]", JpaServiceImpl.class)//
+        .addCode("$[return jpaService.getEntityManager();\n$]", JpaServiceImpl.class)//
         .build();
 
     classBuilder//
