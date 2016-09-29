@@ -14,7 +14,6 @@ import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
-import com.github.x3333.dagger.jpa.JpaModule;
 import com.github.x3333.dagger.jpa.JpaService;
 import com.github.x3333.dagger.jpa.tester.TransactionalClass.MyException;
 import com.github.x3333.dagger.jpa.tester.domain.SomeEntity;

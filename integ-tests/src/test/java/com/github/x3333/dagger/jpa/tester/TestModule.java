@@ -19,8 +19,6 @@ import javax.annotation.Nullable;
 import javax.inject.Named;
 import javax.inject.Singleton;
 
-import com.github.x3333.dagger.aop.InterceptorModule;
-
 import dagger.Binds;
 import dagger.Module;
 import dagger.Provides;
