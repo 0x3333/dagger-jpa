@@ -16,7 +16,7 @@ package com.github.x3333.dagger.jpa;
 import javax.persistence.EntityManager;
 
 /**
- * JPA Persistence service. Used tomanage the overall startup and stop of the persistence module including manual control of
+ * JPA Persistence service. Used to manage the overall startup and stop of the persistence module including manual control of
  * {@link EntityManager}.
  * 
  * <p>
