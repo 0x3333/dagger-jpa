@@ -58,7 +58,7 @@ public final class JpaServiceImpl implements JpaService {
 
   @Override
   public void start() {
-    logger.trace("Starting");
+    logger.info("Starting");
     synchronized (emFactoryLock) {
       if (emFactory != null) {
         return;
@@ -75,7 +75,7 @@ public final class JpaServiceImpl implements JpaService {
 
   @Override
   public void stop() {
-    logger.trace("Stopping");
+    logger.info("Stopping");
     synchronized (emFactoryLock) {
       if (emFactory == null) {
         return;

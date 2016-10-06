@@ -52,7 +52,9 @@ public interface JpaService {
   void stop();
 
   /**
-   * Provides an EntityManager instance.
+   * Provides an {@link EntityManager} instance.
+   * 
+   * @return Return newly created {@link EntityManager}.
    */
   EntityManager getEntityManager();
 
