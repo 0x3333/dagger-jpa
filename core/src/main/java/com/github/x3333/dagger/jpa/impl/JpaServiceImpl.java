@@ -16,6 +16,7 @@ package com.github.x3333.dagger.jpa.impl;
 import static com.google.common.base.Preconditions.checkState;
 
 import com.github.x3333.dagger.jpa.JpaService;
+import com.github.x3333.dagger.jpa.JpaWork;
 
 import java.util.Map;
 
@@ -36,7 +37,7 @@ import org.slf4j.LoggerFactory;
  * @author Tercio Gaudencio Filho (terciofilho [at] gmail.com)
  */
 @Singleton
-public final class JpaServiceImpl implements JpaService {
+public final class JpaServiceImpl implements JpaService, JpaWork {
 
   private final Logger logger = LoggerFactory.getLogger(JpaServiceImpl.class);
 

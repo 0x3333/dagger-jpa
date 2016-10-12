@@ -15,6 +15,10 @@ package com.github.x3333.dagger.jpa;
 
 import com.github.x3333.dagger.jpa.impl.JpaServiceImpl;
 
+import java.util.Map;
+
+import javax.annotation.Nullable;
+import javax.inject.Named;
 import javax.inject.Singleton;
 import javax.persistence.EntityManager;
 
@@ -30,13 +34,22 @@ import dagger.Provides;
 @Module
 public abstract class JpaModule {
 
-  @Binds
+  @Provides
   @Singleton
+  public static JpaServiceImpl providesJpaServiceImpl(@Named("jpa.unitname") final String persistenceUnitName,
+      @Nullable @Named("jpa.properties") final Map<?, ?> persistenceProperties) {
+    return new JpaServiceImpl(persistenceUnitName, persistenceProperties);
+  }
+
+  @Binds
   abstract JpaService providesJpaService(final JpaServiceImpl impl);
 
+  @Binds
+  abstract JpaWork providesJpaWork(final JpaServiceImpl impl);
+
   @Provides
-  public static EntityManager providesEntityManager(final JpaService jpaService) {
-    return jpaService.getEntityManager();
+  public static EntityManager providesEntityManager(final JpaWork jpaWork) {
+    return jpaWork.getEntityManager();
   }
 
 }

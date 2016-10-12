@@ -34,14 +34,14 @@ public final class TransactionalInterceptor implements MethodInterceptor {
 
   private final Logger logger = LoggerFactory.getLogger(TransactionalInterceptor.class);
 
-  private final JpaService service;
+  private final JpaWork work;
   private final ThreadLocal<Boolean> shouldClose = new ThreadLocal<>();
 
   //
 
   @Inject
-  public TransactionalInterceptor(final JpaService service) {
-    this.service = service;
+  public TransactionalInterceptor(final JpaWork work) {
+    this.work = work;
   }
 
   //
@@ -49,12 +49,12 @@ public final class TransactionalInterceptor implements MethodInterceptor {
   @Override
   @SuppressWarnings("unchecked")
   public <T> T invoke(final MethodInvocation invocation) throws Throwable {
-    if (!service.hasBegun()) {
-      service.begin();
+    if (!work.hasBegun()) {
+      work.begin();
       shouldClose.set(true);
     }
 
-    final EntityManager em = service.getEntityManager();
+    final EntityManager em = work.getEntityManager();
     final EntityTransaction transaction = em.getTransaction();
 
     // If there is an active transaction, join.
@@ -84,7 +84,7 @@ public final class TransactionalInterceptor implements MethodInterceptor {
       // Close the EM in case we started work and transaction is not active anymore.
       if (TRUE.equals(shouldClose.get()) && !transaction.isActive()) {
         shouldClose.remove();
-        service.end();
+        work.end();
       }
     }
 
@@ -95,7 +95,7 @@ public final class TransactionalInterceptor implements MethodInterceptor {
       // Close the EM if we begin the work
       if (TRUE.equals(shouldClose.get())) {
         shouldClose.remove();
-        service.end();
+        work.end();
       }
     }
 

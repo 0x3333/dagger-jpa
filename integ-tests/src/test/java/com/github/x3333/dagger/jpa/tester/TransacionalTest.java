@@ -15,12 +15,14 @@ import org.junit.BeforeClass;
 import org.junit.Test;
 
 import com.github.x3333.dagger.jpa.JpaService;
+import com.github.x3333.dagger.jpa.JpaWork;
 import com.github.x3333.dagger.jpa.tester.TransactionalClass.MyException;
 import com.github.x3333.dagger.jpa.tester.domain.SomeEntity;
 
 public class TransacionalTest {
 
 	private static JpaService jpaService;
+	private static JpaWork jpaWork;
 	private static TransactionalInterface transactional;
 
 	@BeforeClass
@@ -37,6 +39,7 @@ public class TransacionalTest {
 		TestComponent component = DaggerTestComponent.builder().build();
 
 		jpaService = component.jpaService();
+		jpaWork = component.jpaWork();
 		jpaService.start();
 
 		transactional = component.transactional();
@@ -52,9 +55,9 @@ public class TransacionalTest {
 		cleanup();
 		int id = transactional.transactionalCommit();
 
-		jpaService.begin();
+		jpaWork.begin();
 		try {
-			EntityManager em = jpaService.getEntityManager();
+			EntityManager em = jpaWork.getEntityManager();
 			TypedQuery<SomeEntity> query = em.createQuery("FROM SomeEntity WHERE id = :id", SomeEntity.class);
 			query.setParameter("id", id);
 			SomeEntity entity = query.getSingleResult();
@@ -63,7 +66,7 @@ public class TransacionalTest {
 			fail("Exception during query.");
 			e.printStackTrace();
 		} finally {
-			jpaService.end();
+			jpaWork.end();
 		}
 	}
 
@@ -79,9 +82,9 @@ public class TransacionalTest {
 			e.printStackTrace();
 		}
 
-		jpaService.begin();
+		jpaWork.begin();
 		try {
-			EntityManager em = jpaService.getEntityManager();
+			EntityManager em = jpaWork.getEntityManager();
 			TypedQuery<Long> query = em.createQuery("SELECT COUNT(e.id) FROM SomeEntity e", Long.class);
 			Long count = query.getSingleResult();
 			assertEquals(count, (Long) 1l);
@@ -89,7 +92,7 @@ public class TransacionalTest {
 			fail("Exception during query.");
 			e.printStackTrace();
 		} finally {
-			jpaService.end();
+			jpaWork.end();
 		}
 	}
 
@@ -105,9 +108,9 @@ public class TransacionalTest {
 			e.printStackTrace();
 		}
 
-		jpaService.begin();
+		jpaWork.begin();
 		try {
-			EntityManager em = jpaService.getEntityManager();
+			EntityManager em = jpaWork.getEntityManager();
 			TypedQuery<Long> query = em.createQuery("SELECT COUNT(e.id) FROM SomeEntity e", Long.class);
 			Long count = query.getSingleResult();
 			assertEquals(count, (Long) 0l);
@@ -115,7 +118,7 @@ public class TransacionalTest {
 			fail("Exception during query.");
 			e.printStackTrace();
 		} finally {
-			jpaService.end();
+			jpaWork.end();
 		}
 	}
 
@@ -123,13 +126,13 @@ public class TransacionalTest {
 	 * Cleanup the database to start a test
 	 */
 	private void cleanup() {
-		jpaService.begin();
-		EntityManager em = jpaService.getEntityManager();
+		jpaWork.begin();
+		EntityManager em = jpaWork.getEntityManager();
 		em.getTransaction().begin();
 		Query query = em.createQuery("DELETE FROM SomeEntity");
 		query.executeUpdate();
 		em.getTransaction().commit();
-		jpaService.end();
+		jpaWork.end();
 	}
 
 }

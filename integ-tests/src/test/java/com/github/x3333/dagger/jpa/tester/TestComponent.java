@@ -18,6 +18,7 @@ import javax.inject.Singleton;
 import com.github.x3333.dagger.aop.InterceptorModule;
 import com.github.x3333.dagger.jpa.JpaModule;
 import com.github.x3333.dagger.jpa.JpaService;
+import com.github.x3333.dagger.jpa.JpaWork;
 
 import dagger.Component;
 
@@ -28,5 +29,7 @@ public interface TestComponent {
 	TransactionalInterface transactional();
 	
 	JpaService jpaService();
+	
+	JpaWork jpaWork();
 
 }
