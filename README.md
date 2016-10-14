@@ -57,7 +57,7 @@ This is a normal module where an interface is binded to an implementation, also 
 public abstract class MyModule {
 
 	@Binds
-	abstract DbWork providesTransac(DbWorkImpl impl);
+	abstract DbWork providesDbWork(DbWorkImpl impl);
 
 	// Here we are bind the Unit Name 
 	@Provides
@@ -83,17 +83,17 @@ In your transactional classes, annotated all methods that need to be transaction
 // Class must be ABSTRACT
 public abstract class DbWorkImpl implements DbWork {
 
-  private final JpaService jpaService;
+  private final JpaWork jpaWork;
 
-  public DbWorkImpl(JpaService jpaService) {
-    this.jpaService = jpaService;
+  public DbWorkImpl(JpaWork jpaWork) {
+    this.jpaWork = jpaWork;
   }
 
   @Override
   @Transactional
   public void doSomeWork() {
     // You can get an EntityManager from JpaService
-    // jpaService.getEntityManager().createQuery(....);
+    // jpaWork.getEntityManager().createQuery(....);
   }
 
 }
@@ -107,7 +107,7 @@ MyComponent component = DaggerMyComponent.builder().build();
 component.jpaService().start();
 ```
 
-This is all. The `InterceptorModule` will bind `DbWorkImpl` to the generated `Interceptor_DbWorkImpl`, which is a subclass of `DbWorkImpl`. Everytime a `DbWork` is requested, a `Interceptor_DbWorkImpl` will be returned. This subclass will manage the transaction for you.
+This is all. The `InterceptorModule` will bind `DbWorkImpl` to the generated `Interceptor_DbWorkImpl`, which is a subclass of `DbWorkImpl`. Everytime a `DbWork` is requested, a `Interceptor_DbWorkImpl` will be returned. This subclass will call the interceptor to manage the transaction for you.
 
 ## Cavets
 
